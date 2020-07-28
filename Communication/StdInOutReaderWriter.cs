@@ -78,7 +78,7 @@ namespace Dprint.Plugins.Roslyn.Communication
 
             var index = _bufferSize;
             while (index < data.Length) {
-                // wait for "read" from the server
+                // wait for "ready" from the server
                 ReadInt();
 
                 _stdout.Write(data, index, Math.Min(data.Length - index, _bufferSize));

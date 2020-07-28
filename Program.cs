@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using Dprint.Plugins.Roslyn.Communication;
-using Dprint.Plugins.Roslyn.Formatters;
+using Dprint.Plugins.Roslyn.Configuration;
 
 namespace Dprint.Plugins.Roslyn
 {
@@ -37,21 +36,17 @@ namespace Dprint.Plugins.Roslyn
 
     class Program
     {
-        private static ICodeFormatter[] _codeFormatters = new ICodeFormatter[]
-        {
-            new CSharpCodeFormatter(),
-            new VisualBasicCodeFormatter(),
-        };
-
         static void Main(string[] args)
         {
             var stdInOut = new StdInOutReaderWriter();
+            var workspace = new Workspace();
+
             while (true)
             {
                 var messageKind = stdInOut.ReadMessageKind();
                 try
                 {
-                    if (!HandleMessageKind(stdInOut, (MessageKind) messageKind))
+                    if (!HandleMessageKind(stdInOut, workspace, (MessageKind) messageKind))
                         return;
                 }
                 catch (Exception ex)
@@ -68,7 +63,7 @@ namespace Dprint.Plugins.Roslyn
             }
         }
 
-        private static bool HandleMessageKind(StdInOutReaderWriter stdInOut, MessageKind messageKind)
+        private static bool HandleMessageKind(StdInOutReaderWriter stdInOut, Workspace workspace, MessageKind messageKind)
         {
             switch (messageKind)
             {
@@ -84,23 +79,27 @@ namespace Dprint.Plugins.Roslyn
                     SendString(stdInOut, ReadLicenseText());
                     break;
                 case MessageKind.GetResolvedConfig:
-                    SendString(stdInOut, "{}");
+                    var config = workspace.GetResolvedConfig();
+                    SendString(stdInOut, new Serialization.JsonSerializer().Serialize(config));
                     break;
                 case MessageKind.SetGlobalConfig:
-                    stdInOut.ReadMessagePart(); // todo: handle
+                    var globalConfig = new Serialization.JsonSerializer().Deserialize<GlobalConfiguration>(stdInOut.ReadMessagePartAsString());
+                    workspace.SetGlobalConfig(globalConfig);
                     SendSuccess(stdInOut);
                     break;
                 case MessageKind.SetPluginConfig:
-                    stdInOut.ReadMessagePart(); // todo: handle
+                    var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(stdInOut.ReadMessagePartAsString());
+                    workspace.SetPluginConfig(pluginConfig);
                     SendSuccess(stdInOut);
                     break;
                 case MessageKind.GetConfigDiagnostics:
-                    SendString(stdInOut, "[]");
+                    var diagnostics = workspace.GetDiagnostics();
+                    SendString(stdInOut, new Serialization.JsonSerializer().Serialize(diagnostics));
                     break;
                 case MessageKind.FormatText:
                     var filePath = stdInOut.ReadMessagePartAsString();
                     var fileText = stdInOut.ReadMessagePartAsString();
-                    var formattedText = FormatCode(filePath, fileText);
+                    var formattedText = workspace.FormatCode(filePath, fileText);
                     if (formattedText == fileText)
                         SendInt(stdInOut, (int)FormatResult.NoChange);
                     else
@@ -168,22 +167,14 @@ namespace Dprint.Plugins.Roslyn
         {
             var assembly = Assembly.GetExecutingAssembly();
             var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-            return fileVersionInfo.FileVersion;
+            return $"{fileVersionInfo.FileMajorPart}.{fileVersionInfo.FileMinorPart}.{fileVersionInfo.FilePrivatePart}";
         }
 
         private static string ReadLicenseText()
         {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Dprint.Plugins.Roslyn.LICENSE");
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Dprint.Plugins.Roslyn.LICENSE") ?? throw new Exception("Could not find license text.");
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
-        }
-
-        private static string FormatCode(string filePath, string code)
-        {
-            var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
-            if (formatter == null)
-                throw new Exception($"Could not find formatter for file path: {filePath}");
-            return formatter.FormatText(code);
         }
     }
 }
