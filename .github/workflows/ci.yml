@@ -1,0 +1,66 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: test_release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup .net
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+
+    - name: Build
+      run: |
+        dotnet build -c Release --runtime win-x64
+        dotnet build -c Release --runtime linux-x64
+        dotnet build -c Release --runtime osx-x64
+
+    - name: Package
+      run: |
+        zip -r dprint-plugin-roslyn-x86_64-apple-darwin.zip bin/Release/netcoreapp3.1/osx-64
+        zip -r dprint-plugin-prettier-x86_64-unknown-linux-gnu.zip bin/Release/netcoreapp3.1/linux-64
+        zip -r dprint-plugin-prettier-x86_64-pc-windows-msvc.zip bin/Release/netcoreapp3.1/win-64
+    - name: Create plugin file
+      run: node scripts/createPluginFile.js
+
+    - name: Get tag version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag_version
+      run: echo ::set-output name=TAG_VERSION::${GITHUB_REF/refs\/tags\//}
+
+    - name: Get plugin file checksum
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_plugin_file_checksum
+      run: echo "::set-output name=CHECKSUM::$(shasum -a 256 roslyn.plugin | awk '{print $1}')"
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: |
+          dprint-plugin-roslyn-x86_64-apple-darwin.zip
+          dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip
+          dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
+          roslyn.plugin
+        body: |
+          ## Install
+
+          Add the following entry to your `plugins` array in *.dprintrc.json*:
+
+          ```jsonc
+          {
+            // etc...
+            "plugins": [
+              "https://plugins.dprint.dev/roslyn-${{ steps.get_tag_version.outputs.TAG_VERSION }}.plugin@${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }}"
+            ]
+          }
+          ```
+        draft: true

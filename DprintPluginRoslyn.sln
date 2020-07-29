@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DprintPluginRoslyn", "DprintPluginRoslyn\DprintPluginRoslyn.csproj", "{BF479150-5FBD-43A1-A332-EB5468E28935}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DprintPluginRoslyn.Tests", "DprintPluginRoslyn.Tests\DprintPluginRoslyn.Tests.csproj", "{6CE57CD2-3E7B-494D-8221-9918BD1A9829}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DprintPluginRoslyn.Tests", "DprintPluginRoslyn.Tests\DprintPluginRoslyn.Tests.csproj", "{6CE57CD2-3E7B-494D-8221-9918BD1A9829}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{DDDE6A47-9406-474E-A565-8228F7E84678}"
 EndProject
@@ -13,6 +13,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\ci.yml = .github\workflows\ci.yml
 		.github\workflows\publish.yml = .github\workflows\publish.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{F99ED3AC-E082-4923-9A28-014BD79BE864}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\createPluginFile.js = scripts\createPluginFile.js
 	EndProjectSection
 EndProject
 Global
