@@ -91,9 +91,15 @@ namespace Dprint.Plugins.Roslyn.Configuration
             _options = _options.WithChangedOption(optionKey, value);
         }
 
-        public void ChangeOption<T>(PerLanguageOption<T> option, string? language, T value)
+        public void ChangeOption<T>(PerLanguageOption<T> option, string language, T value)
         {
             _options = _options.WithChangedOption(option, language, value);
+        }
+
+        public void ChangeOption<T>(PerLanguageOption<T> option, IEnumerable<string> languages, T value)
+        {
+            foreach (var language in languages)
+                _options = _options.WithChangedOption(option, language, value);
         }
 
         public void AddDiagnostic(string propertyName, string message)

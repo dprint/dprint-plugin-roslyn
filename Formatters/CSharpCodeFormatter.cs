@@ -13,11 +13,14 @@ namespace Dprint.Plugins.Roslyn.Formatters
     public class CSharpCodeFormatter : ICodeFormatter
     {
         private readonly AdhocWorkspace _workspace;
+        private readonly string _languageKeyPrefix = "csharp.";
 
         public CSharpCodeFormatter(AdhocWorkspace workspace)
         {
             _workspace = workspace;
         }
+
+        public string RoslynLanguageName => LanguageNames.CSharp;
 
         public bool ShouldFormat(string filePath)
         {
@@ -36,13 +39,17 @@ namespace Dprint.Plugins.Roslyn.Formatters
 
         public void ResolveConfiguration(ConfigurationResolutionContext context)
         {
-            var languageKeyPrefix = "csharp.";
-
             // global config
-            ConfigurationHelpers.HandleGlobalConfig(context, languageKeyPrefix, LanguageNames.CSharp);
+            ConfigurationHelpers.HandleGlobalConfig(context, _languageKeyPrefix, LanguageNames.CSharp);
 
             // plugin config
-            ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), languageKeyPrefix);
+            ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), _languageKeyPrefix);
+        }
+
+        public IEnumerable<(string, object)> GetResolvedConfig(OptionSet options)
+        {
+            return ConfigurationHelpers.GetResolvedGlobalConfig(options, _languageKeyPrefix, LanguageNames.CSharp)
+                .Concat(ConfigurationHelpers.GetResolvedPluginConfig(options, typeof(CSharpFormattingOptions), _languageKeyPrefix));
         }
     }
 }

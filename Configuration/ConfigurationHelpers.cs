@@ -1,31 +1,37 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Formatting;
-using Microsoft.CodeAnalysis.Formatting;
+﻿using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Dprint.Plugins.Roslyn.Configuration
 {
     public static class ConfigurationHelpers
     {
-        public static void HandleGlobalConfig(ConfigurationResolutionContext context, string configPrefix, string? language)
+        public static void HandleGlobalConfig(ConfigurationResolutionContext context, string configPrefix, string language)
+        {
+            HandleGlobalConfig(context, configPrefix, new[] { language });
+        }
+
+        public static void HandleGlobalConfig(ConfigurationResolutionContext context, string configPrefix, IEnumerable<string> languages)
         {
             if (context.RemoveInt($"{configPrefix}indentWidth", out var indentWidth))
             {
-                context.ChangeOption(FormattingOptions.IndentationSize, language, indentWidth);
-                context.ChangeOption(FormattingOptions.TabSize, language, indentWidth);
+                context.ChangeOption(FormattingOptions.IndentationSize, languages, indentWidth);
+                context.ChangeOption(FormattingOptions.TabSize, languages, indentWidth);
             }
 
             if (context.RemoveBool($"{configPrefix}useTabs", out var useTabs))
             {
-                context.ChangeOption(FormattingOptions.UseTabs, language, useTabs);
+                context.ChangeOption(FormattingOptions.UseTabs, languages, useTabs);
             }
 
             {
                 var propertyName = $"{configPrefix}newLineKind";
                 if (context.RemoveString(propertyName, out var newLineKind))
                 {
-                    context.ChangeOption(FormattingOptions.NewLine, language, GetNewLineKind(context, propertyName, newLineKind));
+                    context.ChangeOption(FormattingOptions.NewLine, languages, GetNewLineKind(context, propertyName, newLineKind));
                 }
             }
         }
@@ -45,17 +51,17 @@ namespace Dprint.Plugins.Roslyn.Configuration
                     context.AddDiagnostic(key, $"Could not find property on {formattingOptionsType.Name} with name '{formattingOptionsPropertyName}'");
                     continue;
                 }
+                var genericArgumentType = propertyInfo.PropertyType.GetGenericArguments()[0];
 
-                if (value is bool)
-                    HandleOption(key, optionObject, (bool)value);
-                else if (value is int)
-                    HandleOption(key, optionObject, (int)value);
-                else if (value is string)
+                if (value is string)
                 {
-                    var genericArgumentType = propertyInfo.PropertyType.GetGenericArguments()[0];
                     var stringValue = (string)value;
                     stringValue = stringValue.Substring(0, 1).ToUpper() + stringValue.Substring(1);
-                    if (Enum.TryParse(genericArgumentType, stringValue, out var result))
+                    if (!genericArgumentType.IsEnum)
+                    {
+                        AddMismatchedTypesDiagnostic(key, genericArgumentType, value);
+                    }
+                    else if (Enum.TryParse(genericArgumentType, stringValue, out var result))
                     {
                         IOption option = (IOption)optionObject;
                         context.ChangeOption(new OptionKey(option), result!);
@@ -65,21 +71,58 @@ namespace Dprint.Plugins.Roslyn.Configuration
                         context.AddDiagnostic(key, $"Could not parse string '{(string)value}' to enum: {genericArgumentType.FullName}");
                     }
                 }
+                else if (genericArgumentType != value?.GetType())
+                {
+                    AddMismatchedTypesDiagnostic(key, genericArgumentType, value);
+                }
+                else if (value is bool)
+                {
+                    HandleOption(key, optionObject, (bool)value);
+                }
+                else if (value is int)
+                {
+                    HandleOption(key, optionObject, (int)value);
+                }
                 else
                 {
-                    context.AddDiagnostic(key, $"Unknown value type: {value?.GetType().Name}");
+                    context.AddDiagnostic(key, $"Unhandled value type: {value?.GetType().Name}.");
                 }
+            }
+
+            void AddMismatchedTypesDiagnostic(string propertyName, Type expectedType, object? value)
+            {
+                context.AddDiagnostic(
+                    propertyName,
+                    $"Property value was expected to be {expectedType.Name}, but was {value?.GetType().Name}."
+                );
             }
 
             void HandleOption<T>(string propertyName, object optionObject, T value)
             {
-                var option = optionObject as Option<T>;
-                if (option is null)
-                {
-                    context.AddDiagnostic(propertyName, $"Property value was not expected to be a {typeof(T).Name}.");
-                    return;
-                }
-                context.ChangeOption(option, (T) value);
+                context.ChangeOption((Option<T>) optionObject, (T) value);
+            }
+        }
+
+        public static IEnumerable<(string, object)> GetResolvedGlobalConfig(OptionSet options, string configPrefix, string language)
+        {
+            yield return ($"{configPrefix}indentationSize", options.GetOption(FormattingOptions.IndentationSize, language)!);
+            yield return ($"{configPrefix}tabSize", options.GetOption(FormattingOptions.TabSize, language)!);
+            yield return ($"{configPrefix}useTabs", options.GetOption(FormattingOptions.UseTabs, language)!);
+            yield return ($"{configPrefix}newLine", options.GetOption(FormattingOptions.NewLine, language)!);
+        }
+
+        public static IEnumerable<(string, object)> GetResolvedPluginConfig(OptionSet options, Type formattingOptionsType, string languageKeyPrefix)
+        {
+            foreach (var prop in formattingOptionsType.GetProperties(BindingFlags.Public | BindingFlags.Static))
+            {
+                var optionObject = prop.GetValue(null, null)!;
+                var value = options.GetOption(new OptionKey((IOption)optionObject))!;
+                yield return (GetPropName(prop, languageKeyPrefix), value);
+            }
+
+            static string GetPropName(PropertyInfo prop, string languageKeyPrefix)
+            {
+                return $"{languageKeyPrefix}{prop.Name.Substring(0, 1).ToLower()}{prop.Name.Substring(1)}";
             }
         }
 

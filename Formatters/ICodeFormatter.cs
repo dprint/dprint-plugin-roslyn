@@ -1,12 +1,15 @@
 ﻿using Dprint.Plugins.Roslyn.Configuration;
 using Microsoft.CodeAnalysis.Options;
+using System.Collections.Generic;
 
 namespace Dprint.Plugins.Roslyn.Formatters
 {
     public interface ICodeFormatter
     {
-        public bool ShouldFormat(string filePath);
-        public string FormatText(string text, OptionSet options);
-        public void ResolveConfiguration(ConfigurationResolutionContext context);
+        string RoslynLanguageName { get; }
+        bool ShouldFormat(string filePath);
+        string FormatText(string text, OptionSet options);
+        void ResolveConfiguration(ConfigurationResolutionContext context);
+        IEnumerable<(string, object)> GetResolvedConfig(OptionSet options);
     }
 }

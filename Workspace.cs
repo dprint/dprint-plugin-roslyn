@@ -51,7 +51,13 @@ namespace Dprint.Plugins.Roslyn
         {
             var config = new Dictionary<string, object>();
             var options = GetOptions();
-            // todo: this
+
+            foreach (var formatter in _codeFormatters)
+            {
+                foreach (var (key, value) in formatter.GetResolvedConfig(options))
+                    config[key] = value;
+            }
+
             return config;
         }
 
@@ -71,21 +77,26 @@ namespace Dprint.Plugins.Roslyn
             var globalConfig = _globalConfig ?? new GlobalConfiguration();
             var pluginConfig = new Dictionary<string, object>(_pluginConfig ?? new Dictionary<string, object>());
             var context = new ConfigurationResolutionContext(pluginConfig, _workspace.Options);
+            var languages = _codeFormatters.Select(f => f.RoslynLanguageName).ToList();
 
             if (globalConfig.IndentWidth.HasValue)
             {
-                context.ChangeOption(FormattingOptions.IndentationSize, null, globalConfig.IndentWidth.Value);
-                context.ChangeOption(FormattingOptions.TabSize, null, globalConfig.IndentWidth.Value);
+                context.ChangeOption(FormattingOptions.IndentationSize, languages, globalConfig.IndentWidth.Value);
+                context.ChangeOption(FormattingOptions.TabSize, languages, globalConfig.IndentWidth.Value);
             }
             if (globalConfig.UseTabs.HasValue)
-                context.ChangeOption(FormattingOptions.UseTabs, null, globalConfig.UseTabs.Value);
+                context.ChangeOption(FormattingOptions.UseTabs, languages, globalConfig.UseTabs.Value);
             if (globalConfig.NewLineKind != null)
-                context.ChangeOption(FormattingOptions.NewLine, null, ConfigurationHelpers.GetNewLineKind(context, "newLineKind", globalConfig.NewLineKind));
+                context.ChangeOption(FormattingOptions.NewLine, languages, ConfigurationHelpers.GetNewLineKind(context, "newLineKind", globalConfig.NewLineKind));
 
-            ConfigurationHelpers.HandleGlobalConfig(context, string.Empty, null);
+            ConfigurationHelpers.HandleGlobalConfig(context, string.Empty, languages);
 
             foreach (var formatter in _codeFormatters)
                 formatter.ResolveConfiguration(context);
+
+            // add unhandled configuration diagnostics
+            foreach (var configKey in context.GetConfigKeys())
+                context.AddDiagnostic(configKey, "Unknown configuration property name.");
 
             // finalize state
             _diagnostics.Clear();
