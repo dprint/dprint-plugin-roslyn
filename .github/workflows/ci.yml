@@ -23,9 +23,12 @@ jobs:
 
     - name: Package
       run: |
-        zip -r dprint-plugin-roslyn-x86_64-apple-darwin.zip bin/Release/netcoreapp3.1/osx-64
-        zip -r dprint-plugin-prettier-x86_64-unknown-linux-gnu.zip bin/Release/netcoreapp3.1/linux-64
-        zip -r dprint-plugin-prettier-x86_64-pc-windows-msvc.zip bin/Release/netcoreapp3.1/win-64
+        cd DprintPluginRoslyn/bin/Release/netcoreapp3.1/osx-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-apple-darwin.zip ./*
+        cd ../linux-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip ./*
+        cd ../win-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip ./*
     - name: Create plugin file
       run: node scripts/createPluginFile.js
 
