@@ -60,7 +60,7 @@ namespace Dprint.Plugins.Roslyn.Configuration
             {
                 if (removedValue is T)
                 {
-                    value = (T) removedValue;
+                    value = (T)removedValue;
                     return true;
                 }
                 else

@@ -99,7 +99,7 @@ namespace Dprint.Plugins.Roslyn.Configuration
 
             void HandleOption<T>(string propertyName, object optionObject, T value)
             {
-                context.ChangeOption((Option<T>) optionObject, (T) value);
+                context.ChangeOption((Option<T>)optionObject, (T)value);
             }
         }
 

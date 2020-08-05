@@ -46,7 +46,7 @@ namespace Dprint.Plugins.Roslyn
                 var messageKind = stdInOut.ReadMessageKind();
                 try
                 {
-                    if (!HandleMessageKind(stdInOut, workspace, (MessageKind) messageKind))
+                    if (!HandleMessageKind(stdInOut, workspace, (MessageKind)messageKind))
                         return;
                 }
                 catch (Exception ex)

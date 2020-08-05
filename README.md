@@ -11,7 +11,7 @@ Wrapper around [roslyn](https://github.com/dotnet/roslyn) in order to use it as 
 
 ## Configuration
 
-Specify a "roslyn" configuration property in *.dprintrc.json*:
+Specify a "roslyn" configuration property in _.dprintrc.json_:
 
 ```jsonc
 {
