@@ -99,7 +99,8 @@ namespace Dprint.Plugins.Roslyn
                 case MessageKind.FormatText:
                     var filePath = stdInOut.ReadMessagePartAsString();
                     var fileText = stdInOut.ReadMessagePartAsString();
-                    var formattedText = workspace.FormatCode(filePath, fileText);
+                    var overrideConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(stdInOut.ReadMessagePartAsString());
+                    var formattedText = workspace.FormatCode(filePath, fileText, overrideConfig);
                     if (formattedText == fileText)
                         SendInt(stdInOut, (int)FormatResult.NoChange);
                     else

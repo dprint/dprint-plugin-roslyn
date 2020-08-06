@@ -61,11 +61,12 @@ namespace Dprint.Plugins.Roslyn
             return config;
         }
 
-        public string FormatCode(string filePath, string code)
+        public string FormatCode(string filePath, string code, Dictionary<string, object> overrideConfig)
         {
             var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
             if (formatter is null)
                 throw new Exception($"Could not find formatter for file path: {filePath}");
+            var options = overrideConfig.Count == 0 ? GetOptions() : CreateOptions(overrideConfig).Item1;
             return formatter.FormatText(code, GetOptions());
         }
 
@@ -74,8 +75,25 @@ namespace Dprint.Plugins.Roslyn
             if (_options != null)
                 return _options;
 
+            var (options, diagnostics) = CreateOptions(new Dictionary<string, object>());
+
+            // finalize state
+            _diagnostics.Clear();
+            _diagnostics.AddRange(diagnostics);
+            _options = options;
+
+            return _options;
+        }
+
+        private (OptionSet, List<ConfigurationDiagnostic>) CreateOptions(Dictionary<string, object> overrideConfig)
+        {
             var globalConfig = _globalConfig ?? new GlobalConfiguration();
             var pluginConfig = new Dictionary<string, object>(_pluginConfig ?? new Dictionary<string, object>());
+
+            foreach (var (key, value) in overrideConfig) {
+                pluginConfig[key] = value;
+            }
+
             var context = new ConfigurationResolutionContext(pluginConfig, _workspace.Options);
             var languages = _codeFormatters.Select(f => f.RoslynLanguageName).ToList();
 
@@ -99,11 +117,7 @@ namespace Dprint.Plugins.Roslyn
                 context.AddDiagnostic(configKey, "Unknown configuration property name.");
 
             // finalize state
-            _diagnostics.Clear();
-            _diagnostics.AddRange(context.GetDiagnostics());
-            _options = context.GetOptions();
-
-            return _options;
+            return (context.GetOptions(), context.GetDiagnostics().ToList());
         }
 
         private void ResetConfig()
