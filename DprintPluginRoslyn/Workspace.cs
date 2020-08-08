@@ -90,7 +90,8 @@ namespace Dprint.Plugins.Roslyn
             var globalConfig = _globalConfig ?? new GlobalConfiguration();
             var pluginConfig = new Dictionary<string, object>(_pluginConfig ?? new Dictionary<string, object>());
 
-            foreach (var (key, value) in overrideConfig) {
+            foreach (var (key, value) in overrideConfig)
+            {
                 pluginConfig[key] = value;
             }
 

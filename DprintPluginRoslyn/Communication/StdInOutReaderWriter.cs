@@ -30,7 +30,7 @@ namespace Dprint.Plugins.Roslyn.Communication
         private int ReadInt()
         {
             byte[] buffer = new byte[4];
-            _stdin.Read(buffer, 0, buffer.Length);
+            ReadStdIn(buffer, 0, buffer.Length);
             return (int)BigEndianBitConverter.GetUInt(buffer);
         }
 
@@ -47,17 +47,17 @@ namespace Dprint.Plugins.Roslyn.Communication
             if (size > 0)
             {
                 // read the first part of the message part
-                _stdin.Read(messageData, 0, Math.Min(_bufferSize, size));
+                ReadStdIn(messageData, 0, Math.Min(_bufferSize, size));
 
                 var index = _bufferSize;
                 while (index < size)
                 {
                     // send "ready" to the client
-                    WriteInt(0);
+                    SendInt(0);
                     _stdout.Flush();
 
                     // read from buffer
-                    _stdin.Read(messageData, index, Math.Min(size - index, _bufferSize));
+                    ReadStdIn(messageData, index, Math.Min(size - index, _bufferSize));
                     index += _bufferSize;
                 }
             }
@@ -67,14 +67,14 @@ namespace Dprint.Plugins.Roslyn.Communication
 
         public void SendMessageKind(int messageKind)
         {
-            WriteInt(messageKind);
+            SendInt(messageKind);
             _stdout.Flush();
         }
 
-        public void SendMessagePart(byte[] data)
+        public void SendVariableWidth(byte[] data)
         {
-            WriteInt(data.Length);
-            _stdout.Write(data, 0, Math.Min(data.Length, _bufferSize));
+            SendInt(data.Length);
+            WriteStdOut(data, 0, Math.Min(data.Length, _bufferSize));
             _stdout.Flush();
 
             var index = _bufferSize;
@@ -83,17 +83,31 @@ namespace Dprint.Plugins.Roslyn.Communication
                 // wait for "ready" from the server
                 ReadInt();
 
-                _stdout.Write(data, index, Math.Min(data.Length - index, _bufferSize));
+                WriteStdOut(data, index, Math.Min(data.Length - index, _bufferSize));
                 _stdout.Flush();
 
                 index += _bufferSize;
             }
         }
 
-        private void WriteInt(int value)
+        public void SendInt(int value)
         {
             var bytes = BigEndianBitConverter.GetBytes((uint)value);
-            _stdout.Write(bytes, 0, bytes.Length);
+            WriteStdOut(bytes, 0, bytes.Length);
+        }
+
+        private void ReadStdIn(byte[] buffer, int offset, int count)
+        {
+            var bytesReadCount = _stdin.Read(buffer, offset, count);
+
+            // This most likely indicates the process writing to stdin doesn't exist anymore.
+            if (bytesReadCount != count)
+                throw new Exception($"The bytes read was {bytesReadCount}, but expected {count}.");
+        }
+
+        private void WriteStdOut(byte[] bytes, int offset, int count)
+        {
+            _stdout.Write(bytes, offset, count);
         }
     }
 }
