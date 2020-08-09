@@ -12,10 +12,7 @@ namespace Dprint.Plugins.Roslyn
             var parentProcessChecker = new ParentProcessChecker(cliArgs.ParentProcessId);
 
             // start the task to periodically check if the parent process has exited and exit if so
-            Task.Run(() =>
-            {
-                return parentProcessChecker.RunCheckerLoop();
-            });
+            Task.Run(() => parentProcessChecker.RunCheckerLoop());
 
             // start the stdio message handler loop
             try
