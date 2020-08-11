@@ -56,14 +56,27 @@ jobs:
         body: |
           ## Install
 
-          Add the following entry to your `plugins` array in *.dprintrc.json*:
+          In *.dprintrc.json*:
 
-          ```jsonc
-          {
-            // etc...
-            "plugins": [
-              "https://plugins.dprint.dev/roslyn-${{ steps.get_tag_version.outputs.TAG_VERSION }}.exe-plugin@${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }}"
-            ]
-          }
-          ```
+          1. Specify the plugin url and checksum in the `"plugins"` array.
+             ```jsonc
+             {
+               // etc...
+               "plugins": [
+                 "https://plugins.dprint.dev/roslyn-${{ steps.get_tag_version.outputs.TAG_VERSION }}.exe-plugin@${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }}"
+               ]
+             }
+             ```
+          2. Ensure .cs and .vb file extensions are matched in an "includes" pattern.
+          3. Add a "roslyn" configuration property if desired.
+
+             ```jsonc
+             {
+               // ...etc...
+               "roslyn": {
+                 "csharp.indentBlock": false,
+                 "visualBasic.indentWidth": 2
+               }
+             }
+             ```
         draft: true
