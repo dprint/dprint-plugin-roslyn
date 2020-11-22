@@ -4,13 +4,13 @@ using System.Text;
 
 namespace Dprint.Plugins.Roslyn.Communication
 {
-    public class StdInOutReaderWriter : IDisposable
+    public class StdIoReaderWriter : IDisposable
     {
         private readonly Stream _stdin;
         private readonly Stream _stdout;
         private readonly int _bufferSize = 1024;
 
-        public StdInOutReaderWriter()
+        public StdIoReaderWriter()
         {
             _stdin = Console.OpenStandardInput();
             _stdout = Console.OpenStandardOutput();
@@ -22,58 +22,61 @@ namespace Dprint.Plugins.Roslyn.Communication
             _stdout.Dispose();
         }
 
-        public int ReadMessageKind()
-        {
-            return ReadInt();
-        }
-
-        private int ReadInt()
+        public int ReadInt()
         {
             byte[] buffer = new byte[4];
             ReadStdIn(buffer, 0, buffer.Length);
             return (int)BigEndianBitConverter.GetUInt(buffer);
         }
 
-        public string ReadMessagePartAsString()
+        public void ReadSuccessBytes()
         {
-            return Encoding.UTF8.GetString(ReadMessagePart());
+            byte[] buffer = new byte[4];
+            ReadStdIn(buffer, 0, buffer.Length);
+            for (var i = 0; i < buffer.Length; i++)
+            {
+                if (buffer[i] != 255)
+                {
+                    Console.Error.Write($"Catastrophic error. Did not find success bytes. Instead found: [{string.Join(", ", buffer)}]");
+                    Environment.Exit(1);
+                }
+            }
         }
 
-        public byte[] ReadMessagePart()
+        public byte[] ReadVariableData()
         {
             var size = ReadInt();
-            var messageData = new byte[size];
+            var variableData = new byte[size];
 
             if (size > 0)
             {
                 // read the first part of the message part
-                ReadStdIn(messageData, 0, Math.Min(_bufferSize, size));
+                ReadStdIn(variableData, 0, Math.Min(_bufferSize, size));
 
                 var index = _bufferSize;
                 while (index < size)
                 {
                     // send "ready" to the client
                     SendInt(0);
-                    _stdout.Flush();
 
                     // read from buffer
-                    ReadStdIn(messageData, index, Math.Min(size - index, _bufferSize));
+                    ReadStdIn(variableData, index, Math.Min(size - index, _bufferSize));
                     index += _bufferSize;
                 }
             }
 
-            return messageData;
+            return variableData;
         }
 
-        public void SendMessageKind(int messageKind)
+        public void SendInt(int messageKind)
         {
-            SendInt(messageKind);
+            RawSendInt(messageKind);
             _stdout.Flush();
         }
 
         public void SendVariableWidth(byte[] data)
         {
-            SendInt(data.Length);
+            RawSendInt(data.Length);
             WriteStdOut(data, 0, Math.Min(data.Length, _bufferSize));
             _stdout.Flush();
 
@@ -90,7 +93,13 @@ namespace Dprint.Plugins.Roslyn.Communication
             }
         }
 
-        public void SendInt(int value)
+        public void SendSuccessBytes()
+        {
+            var successBytes = new byte[] { 255, 255, 255, 255 };
+            WriteStdOut(successBytes, 0, 4);
+        }
+
+        private void RawSendInt(int value)
         {
             var bytes = BigEndianBitConverter.GetBytes((uint)value);
             WriteStdOut(bytes, 0, bytes.Length);

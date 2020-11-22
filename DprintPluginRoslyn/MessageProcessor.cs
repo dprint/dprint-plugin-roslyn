@@ -36,12 +36,12 @@ namespace Dprint.Plugins.Roslyn
 
     public class MessageProcessor
     {
-        private readonly StdInOutReaderWriter _stdInOut;
+        private readonly StdIoMessenger _messenger;
         private readonly Workspace _workspace;
 
-        public MessageProcessor(StdInOutReaderWriter readerWriter, Workspace workspace)
+        public MessageProcessor(StdIoMessenger messenger, Workspace workspace)
         {
-            _stdInOut = readerWriter;
+            _messenger = messenger;
             _workspace = workspace;
         }
 
@@ -49,7 +49,7 @@ namespace Dprint.Plugins.Roslyn
         {
             while (true)
             {
-                var messageKind = _stdInOut.ReadMessageKind();
+                var messageKind = _messenger.ReadCode();
                 try
                 {
                     if (!HandleMessageKind((MessageKind)messageKind))
@@ -76,50 +76,65 @@ namespace Dprint.Plugins.Roslyn
                 case MessageKind.Close:
                     return false;
                 case MessageKind.GetPluginSchemaVersion:
-                    SendInt(2);
+                    _messenger.ReadZeroPartMessage();
+                    SendSuccess(MessagePart.FromInt(3));
                     break;
                 case MessageKind.GetPluginInfo:
-                    SendString(GetPluginInfo());
+                    _messenger.ReadZeroPartMessage();
+                    SendSuccess(MessagePart.FromString(GetPluginInfo()));
                     break;
                 case MessageKind.GetLicenseText:
-                    SendString(ReadLicenseText());
+                    _messenger.ReadZeroPartMessage();
+                    SendSuccess(MessagePart.FromString(ReadLicenseText()));
                     break;
                 case MessageKind.GetResolvedConfig:
-                    var config = _workspace.GetResolvedConfig();
-                    SendString(new Serialization.JsonSerializer().Serialize(config));
-                    break;
-                case MessageKind.SetGlobalConfig:
-                    var globalConfig = new Serialization.JsonSerializer().Deserialize<GlobalConfiguration>(_stdInOut.ReadMessagePartAsString());
-                    _workspace.SetGlobalConfig(globalConfig);
-                    SendSuccess();
-                    break;
-                case MessageKind.SetPluginConfig:
-                    var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(_stdInOut.ReadMessagePartAsString());
-                    _workspace.SetPluginConfig(pluginConfig);
-                    SendSuccess();
-                    break;
-                case MessageKind.GetConfigDiagnostics:
-                    var diagnostics = _workspace.GetDiagnostics();
-                    SendString(new Serialization.JsonSerializer().Serialize(diagnostics));
-                    break;
-                case MessageKind.FormatText:
-                    var filePath = _stdInOut.ReadMessagePartAsString();
-                    var fileText = _stdInOut.ReadMessagePartAsString();
-                    var overrideConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(_stdInOut.ReadMessagePartAsString());
-                    var formattedText = _workspace.FormatCode(filePath, fileText, overrideConfig);
-                    if (formattedText == fileText)
-                        SendInt((int)FormatResult.NoChange);
-                    else
                     {
-                        SendResponse(
-                            new List<object>
-                            {
-                                (int)FormatResult.Change,
-                                Encoding.UTF8.GetBytes(formattedText),
-                            }
-                        );
+                        _messenger.ReadZeroPartMessage();
+                        var config = _workspace.GetResolvedConfig();
+                        SendSuccess(MessagePart.FromString(new Serialization.JsonSerializer().Serialize(config)));
+                        break;
                     }
-                    break;
+                case MessageKind.SetGlobalConfig:
+                    {
+                        var message = _messenger.ReadSinglePartMessage();
+                        var globalConfig = new Serialization.JsonSerializer().Deserialize<GlobalConfiguration>(message.IntoString());
+                        _workspace.SetGlobalConfig(globalConfig);
+                        SendSuccess();
+                        break;
+                    }
+                case MessageKind.SetPluginConfig:
+                    {
+                        var message = _messenger.ReadSinglePartMessage();
+                        var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(message.IntoString());
+                        _workspace.SetPluginConfig(pluginConfig);
+                        SendSuccess();
+                        break;
+                    }
+                case MessageKind.GetConfigDiagnostics:
+                    {
+                        _messenger.ReadZeroPartMessage();
+                        var diagnostics = _workspace.GetDiagnostics();
+                        SendSuccess(MessagePart.FromString(new Serialization.JsonSerializer().Serialize(diagnostics)));
+                        break;
+                    }
+                case MessageKind.FormatText:
+                    {
+                        var message = _messenger.ReadMultiPartMessage(3);
+                        var filePath = message[0].IntoString();
+                        var fileText = message[1].IntoString();
+                        var overrideConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(message[2].IntoString());
+                        var formattedText = _workspace.FormatCode(filePath, fileText, overrideConfig);
+                        if (formattedText == fileText)
+                            SendSuccess(MessagePart.FromInt((int)FormatResult.NoChange));
+                        else
+                        {
+                            SendSuccess(
+                                MessagePart.FromInt((int)FormatResult.Change),
+                                MessagePart.FromString(formattedText)
+                            );
+                        }
+                        break;
+                    }
                 default:
                     throw new NotImplementedException($"Unhandled message kind: {messageKind}");
             }
@@ -127,49 +142,14 @@ namespace Dprint.Plugins.Roslyn
             return true;
         }
 
-        private void SendString(string value)
+        private void SendSuccess(params MessagePart[] messageParts)
         {
-            SendResponse(new List<object> { Encoding.UTF8.GetBytes(value) });
-        }
-
-        private void SendInt(int value)
-        {
-            SendResponse(new List<object> { value });
-        }
-
-        private void SendSuccess()
-        {
-            SendResponse(new List<object>());
-        }
-
-        // todo: don't box here
-        private void SendResponse(IList<object> messageParts)
-        {
-            _stdInOut.SendMessageKind((int)ResponseKind.Success);
-            try
-            {
-                foreach (var messagePart in messageParts)
-                {
-                    if (messagePart is byte[])
-                        _stdInOut.SendVariableWidth((byte[])messagePart);
-                    else if (messagePart is int)
-                        _stdInOut.SendInt((int)messagePart);
-                    else
-                        throw new Exception($"Unknown message part type: {messagePart.GetType().FullName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.Write($"Error sending message: {ex.Message}");
-                Environment.Exit(1); // exit the process... can't send back invalid data at this point
-            }
+            _messenger.SendMessage((int)ResponseKind.Success, messageParts);
         }
 
         private void SendErrorResponse(string message)
         {
-            var errorBytes = Encoding.UTF8.GetBytes(message);
-            _stdInOut.SendMessageKind((int)ResponseKind.Error);
-            _stdInOut.SendVariableWidth(errorBytes);
+            _messenger.SendMessage((int)ResponseKind.Error, MessagePart.FromString(message));
         }
 
         private static string GetPluginInfo()

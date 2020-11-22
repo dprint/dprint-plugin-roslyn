@@ -17,10 +17,11 @@ namespace Dprint.Plugins.Roslyn
             // start the stdio message handler loop
             try
             {
-                var stdInOut = new StdInOutReaderWriter();
+                using var readerWriter = new StdIoReaderWriter();
+                var messenger = new StdIoMessenger(readerWriter);
                 var workspace = new Workspace();
 
-                var messageProcessor = new MessageProcessor(stdInOut, workspace);
+                var messageProcessor = new MessageProcessor(messenger, workspace);
                 messageProcessor.RunBlockingMessageLoop();
             }
             catch (Exception ex)
