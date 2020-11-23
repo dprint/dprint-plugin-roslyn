@@ -6,7 +6,7 @@
     <RootNamespace>Dprint.Plugins.Roslyn</RootNamespace>
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <Authors>David Sherret</Authors>
     <Company>Dprint Code Formatting</Company>
   </PropertyGroup>
