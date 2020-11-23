@@ -9,8 +9,9 @@
     "**/bin"
   ],
   "plugins": [
-    "https://plugins.dprint.dev/json-0.7.0.wasm",
-    "https://plugins.dprint.dev/markdown-0.4.0.wasm",
-    "https://plugins.dprint.dev/roslyn-0.1.0.exe-plugin@1186052a3a30c1ee179a2162177e907acdceca01ebf95ba374146c8c1779528f"
+    "https://plugins.dprint.dev/typescript-0.33.0.wasm",
+    "https://plugins.dprint.dev/json-0.7.2.wasm",
+    "https://plugins.dprint.dev/markdown-0.4.2.wasm",
+    "https://plugins.dprint.dev/roslyn-0.2.0.exe-plugin@27af39c9d33ab1089ead75f4874edf1e0c7f26ceab38df80f6390dadcbcd0e6d"
   ]
 }
