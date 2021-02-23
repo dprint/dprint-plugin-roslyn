@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/dprint/dprint-plugin-roslyn/workflows/CI/badge.svg)](https://github.com/dprint/dprint-plugin-roslyn/actions?query=workflow%3ACI)
 
-Wrapper around [roslyn](https://github.com/dotnet/roslyn) in order to use it as a dprint plugin for C# and Visual Basic code formatting.
+Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as a dprint plugin for C# and Visual Basic code formatting.
 
 ## Install
 

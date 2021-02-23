@@ -4,8 +4,9 @@ const crypto = require("crypto");
 const packageText = fs.readFileSync("DprintPluginRoslyn/DprintPluginRoslyn.csproj", { encoding: "utf8" });
 const version = packageText.match(/\<Version\>(\d+\.\d+\.\d+)<\/Version\>/)[1];
 
-if (!/^\d+\.\d+\.\d+$/.test(version))
+if (!/^\d+\.\d+\.\d+$/.test(version)) {
     throw new Error("Error extracting version.");
+}
 
 const outputFile = {
     schemaVersion: 1,
