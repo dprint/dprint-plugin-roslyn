@@ -22,7 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{F99E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C0401B6F-18A2-482B-B8BD-C03B9A774651}"
 	ProjectSection(SolutionItems) = preProject
-		.dprintrc.json = .dprintrc.json
+		dprint.json = dprint.json
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
