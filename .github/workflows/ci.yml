@@ -56,7 +56,7 @@ jobs:
         body: |
           ## Install
 
-          In *dprint.json*:
+          In dprint configuration file:
 
           1. Specify the plugin url and checksum in the `"plugins"` array.
              ```jsonc
@@ -79,4 +79,4 @@ jobs:
                }
              }
              ```
-        draft: true
+        draft: false
