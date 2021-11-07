@@ -1,5 +1,6 @@
 {
   "incremental": true,
+  "indentWidth": 2,
   "includes": ["**/*.{json,md,cs,js}"],
   "excludes": [
     "**/*-lock.json",
@@ -10,6 +11,6 @@
     "https://plugins.dprint.dev/typescript-0.59.2.wasm",
     "https://plugins.dprint.dev/json-0.13.2.wasm",
     "https://plugins.dprint.dev/markdown-0.11.2.wasm",
-    "https://plugins.dprint.dev/roslyn-0.3.0.exe-plugin@d5615566dd7553e0bf51b6bcea08967506607bebf2240b92c59ec1e3adb26164"
+    "https://plugins.dprint.dev/roslyn-0.4.0.exe-plugin@61ad8df289f022d0cd093db6ff48cf9aa4fb22dc1d39ffca7f165c4c376357d4"
   ]
 }

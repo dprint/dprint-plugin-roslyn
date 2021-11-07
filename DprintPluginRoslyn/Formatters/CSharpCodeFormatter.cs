@@ -10,46 +10,46 @@ using System.Linq;
 
 namespace Dprint.Plugins.Roslyn.Formatters
 {
-    public class CSharpCodeFormatter : ICodeFormatter
+  public class CSharpCodeFormatter : ICodeFormatter
+  {
+    private readonly AdhocWorkspace _workspace;
+    private readonly string _languageKeyPrefix = "csharp.";
+
+    public CSharpCodeFormatter(AdhocWorkspace workspace)
     {
-        private readonly AdhocWorkspace _workspace;
-        private readonly string _languageKeyPrefix = "csharp.";
-
-        public CSharpCodeFormatter(AdhocWorkspace workspace)
-        {
-            _workspace = workspace;
-        }
-
-        public string RoslynLanguageName => LanguageNames.CSharp;
-
-        public bool ShouldFormat(string filePath)
-        {
-            return filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
-        }
-
-        public string FormatText(string text, OptionSet options)
-        {
-            SyntaxNode formattedNode;
-
-            var syntaxTree = CSharpSyntaxTree.ParseText(text);
-            var root = syntaxTree.GetCompilationUnitRoot();
-            formattedNode = Formatter.Format(root, _workspace, options);
-            return formattedNode.WriteToString();
-        }
-
-        public void ResolveConfiguration(ConfigurationResolutionContext context)
-        {
-            // global config
-            ConfigurationHelpers.HandleGlobalConfig(context, _languageKeyPrefix, LanguageNames.CSharp);
-
-            // plugin config
-            ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), _languageKeyPrefix);
-        }
-
-        public IEnumerable<(string, object)> GetResolvedConfig(OptionSet options)
-        {
-            return ConfigurationHelpers.GetResolvedGlobalConfig(options, _languageKeyPrefix, LanguageNames.CSharp)
-                .Concat(ConfigurationHelpers.GetResolvedPluginConfig(options, typeof(CSharpFormattingOptions), _languageKeyPrefix));
-        }
+      _workspace = workspace;
     }
+
+    public string RoslynLanguageName => LanguageNames.CSharp;
+
+    public bool ShouldFormat(string filePath)
+    {
+      return filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public string FormatText(string text, OptionSet options)
+    {
+      SyntaxNode formattedNode;
+
+      var syntaxTree = CSharpSyntaxTree.ParseText(text);
+      var root = syntaxTree.GetCompilationUnitRoot();
+      formattedNode = Formatter.Format(root, _workspace, options);
+      return formattedNode.WriteToString();
+    }
+
+    public void ResolveConfiguration(ConfigurationResolutionContext context)
+    {
+      // global config
+      ConfigurationHelpers.HandleGlobalConfig(context, _languageKeyPrefix, LanguageNames.CSharp);
+
+      // plugin config
+      ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), _languageKeyPrefix);
+    }
+
+    public IEnumerable<(string, object)> GetResolvedConfig(OptionSet options)
+    {
+      return ConfigurationHelpers.GetResolvedGlobalConfig(options, _languageKeyPrefix, LanguageNames.CSharp)
+          .Concat(ConfigurationHelpers.GetResolvedPluginConfig(options, typeof(CSharpFormattingOptions), _languageKeyPrefix));
+    }
+  }
 }
