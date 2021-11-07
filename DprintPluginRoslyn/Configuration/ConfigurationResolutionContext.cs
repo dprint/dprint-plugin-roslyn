@@ -63,6 +63,12 @@ namespace Dprint.Plugins.Roslyn.Configuration
                     value = (T)removedValue;
                     return true;
                 }
+                else if (typeof(T) == typeof(int) && removedValue is long)
+                {
+                    // convert any long values to their expected int values
+                    value = (T)(object)(int)(long)removedValue;
+                    return true;
+                }
                 else
                 {
                     AddDiagnostic(propertyName, $"Value must be a {typeof(T).Name}");
