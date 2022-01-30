@@ -161,7 +161,8 @@ namespace Dprint.Plugins.Roslyn
       sb.Append(@"""configKey"":""roslyn"",");
       sb.Append(@"""fileExtensions"":[""cs"",""vb""],");
       sb.Append(@"""helpUrl"":""https://dprint.dev/plugins/roslyn"",");
-      sb.Append(@"""configSchemaUrl"":""""");
+      sb.Append(@"""configSchemaUrl"":"""",");
+      sb.Append(@"""updateUrl"":""https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json""");
       sb.Append("}");
       return sb.ToString();
     }

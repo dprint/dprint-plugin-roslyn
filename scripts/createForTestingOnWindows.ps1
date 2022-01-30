@@ -3,7 +3,7 @@
 # 1. Comment out osx and linux `getPlatformObject` and change the
 #    reference line to `reference": `./${zipFileName}`,` in scripts/createPluginFile.js
 # 2. Run `./scripts/createForTestingOnWindows.ps1`
-# 3. Update dprint.json to point at ./roslyn.exe-plugin then update checksum
+# 3. Update dprint.json to point at ./plugin.exe-plugin then update checksum
 #    as shown when initially run.
 
 dotnet build -c Release --runtime win-x64
