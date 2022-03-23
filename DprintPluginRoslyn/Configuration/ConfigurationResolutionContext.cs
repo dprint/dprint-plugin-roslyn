@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Dprint.Plugins.Roslyn.Configuration;
-j
-  public class ConfigurationResolutionContext
+
+public class ConfigurationResolutionContext
 {
     private readonly IDictionary<string, object> _pluginConfig;
     private readonly IList<ConfigurationDiagnostic> _diagnostics = new List<ConfigurationDiagnostic>();
@@ -112,5 +112,4 @@ j
     {
         _diagnostics.Add(new ConfigurationDiagnostic(propertyName, message));
     }
-}
 }

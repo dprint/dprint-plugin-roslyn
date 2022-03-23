@@ -6,7 +6,7 @@ namespace Dprint.Plugins.Roslyn;
 
 class Program
 {
-    static async void Main(string[] args)
+    static void Main(string[] args)
     {
         var cliArgs = new ArgParser().ParseArgs(args);
         var parentProcessChecker = new ParentProcessChecker(cliArgs.ParentProcessId);
@@ -24,10 +24,10 @@ class Program
 
             EstablishSchemaVersion(reader, writer);
 
-            var workspace = new Workspace();
+            var stdoutWriter = new StdoutWriter(writer);
+            var messageProcessor = new MessageProcessor(stdoutWriter);
 
-            var messageProcessor = new MessageProcessor(workspace);
-            await messageProcessor.Run(reader, writer);
+            messageProcessor.RunStdinMessageLoop(reader);
         }
         catch
         {

@@ -1,7 +1,6 @@
 ﻿using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Serialization;
-using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
@@ -10,55 +9,20 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Dprint.Plugins.Roslyn;
 
-public sealed class MessageProcessor : IDisposable
+public class MessageProcessor
 {
-    private readonly CancellationTokenSource _disposeCts = new CancellationTokenSource();
     private readonly Workspace _workspace;
-    private readonly Channel<Message> _stdoutChannel;
-    private readonly IdGenerator _id = new IdGenerator();
+    private readonly StdoutWriter _stdoutWriter;
     private readonly JsonSerializer _serializer = new JsonSerializer();
 
-    public MessageProcessor(Workspace workspace)
+    public MessageProcessor(StdoutWriter writer)
     {
-        _workspace = workspace;
-        _stdoutChannel = Channel.CreateUnbounded<Message>();
-    }
-
-    public void Dispose()
-    {
-        _disposeCts.Cancel();
-        _disposeCts.Dispose();
-    }
-
-    public Task Run(MessageReader reader, MessageWriter writer)
-    {
-        var disposeToken = _disposeCts.Token;
-        // exits when stdin receives a close or either throws a hard exception
-        return Task.WhenAny(
-            Task.Run(() => RunStdinMessageLoop(reader)),
-            Task.Run(() => RunStdoutMessageLoop(_stdoutChannel.Reader, writer, disposeToken))
-        );
-
-        static async Task RunStdoutMessageLoop(ChannelReader<Message> channelReader, MessageWriter writer, CancellationToken token)
-        {
-            try
-            {
-                while (true)
-                {
-                    var message = await channelReader.ReadAsync(token);
-                    message.Write(writer);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // do nothing
-            }
-        }
+        _workspace = new Workspace();
+        _stdoutWriter = writer;
     }
 
     public void RunStdinMessageLoop(MessageReader reader)
@@ -74,13 +38,13 @@ public sealed class MessageProcessor : IDisposable
                 case ShutdownMessage message:
                     return; // exit
                 case ActiveMessage message:
-                    SendSuccessResponse(message.MessageId);
+                    _stdoutWriter.SendSuccessResponse(message.MessageId);
                     break;
                 case GetPluginInfoMessage message:
-                    SendDataResponse(message.MessageId, GetPluginInfo());
+                    _stdoutWriter.SendDataResponse(message.MessageId, GetPluginInfo());
                     break;
                 case GetLicenseTextMessage message:
-                    SendDataResponse(message.MessageId, ReadLicenseText());
+                    _stdoutWriter.SendDataResponse(message.MessageId, ReadLicenseText());
                     break;
                 case RegisterConfigMessage message:
                     TryAction(message.MessageId, () =>
@@ -88,28 +52,29 @@ public sealed class MessageProcessor : IDisposable
                         var globalConfig = _serializer.Deserialize<GlobalConfiguration>(message.GlobalConfigData);
                         var pluginConfig = _serializer.Deserialize<Dictionary<string, object>>(message.PluginConfigData);
                         _workspace.SetConfig(message.ConfigId, globalConfig, pluginConfig);
-                        SendSuccessResponse(message.MessageId);
+                        _stdoutWriter.SendSuccessResponse(message.MessageId);
                     });
                     break;
                 case ReleaseConfigMessage message:
                     TryAction(message.MessageId, () =>
                     {
                         _workspace.ReleaseConfig(message.ConfigId);
-                        SendSuccessResponse(message.MessageId);
+                        _stdoutWriter.SendSuccessResponse(message.MessageId);
                     });
                     break;
                 case GetConfigDiagnosticsMessage message:
                     TryAction(message.MessageId, () =>
                     {
-                        _workspace.GetDiagnostics(message.ConfigId);
-                        SendSuccessResponse(message.MessageId);
+                        var jsonDiagnostics = _serializer.Serialize(_workspace.GetDiagnostics(message.ConfigId));
+                        _stdoutWriter.SendDataResponse(message.MessageId, jsonDiagnostics);
                     });
                     break;
                 case GetResolvedConfigMessage message:
                     TryAction(message.MessageId, () =>
                     {
-                        _workspace.GetResolvedConfig(message.ConfigId);
-                        SendSuccessResponse(message.MessageId);
+                        var formatters = _workspace.GetFormatters(message.ConfigId);
+                        var jsonConfig = _serializer.Serialize(formatters.GetResolvedConfig());
+                        _stdoutWriter.SendDataResponse(message.MessageId, jsonConfig);
                     });
                     break;
                 case FormatTextMessage message:
@@ -126,7 +91,7 @@ public sealed class MessageProcessor : IDisposable
                     // ignore
                     break;
                 case HostFormatMessage message:
-                    SendError(message.MessageId, "Cannot host format with a plugin.");
+                    _stdoutWriter.SendError(message.MessageId, "Cannot host format with a plugin.");
                     break;
                 default:
                     // exit the process
@@ -139,20 +104,19 @@ public sealed class MessageProcessor : IDisposable
     {
         TryAction(message.MessageId, () =>
         {
-            // Resolve the options on the current thread to eliminate a
-            // race condition where the configId could be released between
-            // now and when the task is spawned.
+            // workspace is not thread safe, so keep it here
             var overrideConfig = _serializer.Deserialize<Dictionary<string, object>>(message.OverrideConfig);
-            var options = _workspace.ResolveOptions(message.ConfigId, overrideConfig);
+            var formatters = _workspace.GetFormatters(message.ConfigId, overrideConfig);
+            var filePath = Encoding.UTF8.GetString(message.FilePath);
+            var fileText = Encoding.UTF8.GetString(message.FileText);
 
+            // SAFETY - Ensure everything sent here is thread safe
             Task.Run(() =>
             {
                 TryAction(message.MessageId, () =>
                 {
-                    var filePath = Encoding.UTF8.GetString(message.FilePath);
-                    var fileText = Encoding.UTF8.GetString(message.FileText);
                     var range = GetTextSpan(message);
-                    var result = _workspace.FormatCode(filePath, fileText, range, options, token);
+                    var result = formatters.FormatCode(filePath, fileText, range, token);
                 });
             });
         });
@@ -182,48 +146,8 @@ public sealed class MessageProcessor : IDisposable
         }
         catch (Exception ex)
         {
-            SendError(originalMessageId, ex);
+            _stdoutWriter.SendError(originalMessageId, ex);
         }
-    }
-
-    private void SendSuccessResponse(uint originalMessageId)
-    {
-        SendMessage(new SuccessResponseMessage(_id.Next(), originalMessageId));
-    }
-
-    private void SendDataResponse(uint originalMessageId, string text)
-    {
-        SendMessage(new DataResponseMessage(_id.Next(), originalMessageId, Encoding.UTF8.GetBytes(text)));
-    }
-
-    private void SendError(uint originalMessageId, Exception ex)
-    {
-        SendError(originalMessageId, ExceptionToString(ex));
-    }
-
-    private void SendError(uint originalMessageId, string text)
-    {
-        SendMessage(new ErrorResponseMessage(_id.Next(), originalMessageId, Encoding.UTF8.GetBytes(text)));
-    }
-
-    private void SendMessage(Message message)
-    {
-        Task.Run(async () =>
-        {
-            await _stdoutChannel.Writer.WriteAsync(message);
-        });
-    }
-
-    private static string ExceptionToString(Exception ex)
-    {
-        var sb = new StringBuilder();
-        sb.Append(ex.Message);
-        if (ex.StackTrace != null)
-        {
-            sb.Append('\n');
-            sb.Append(ex.StackTrace);
-        }
-        return sb.ToString();
     }
 
     private static string GetPluginInfo()
