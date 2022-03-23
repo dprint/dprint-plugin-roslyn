@@ -1,11 +1,11 @@
 # Script for quickly creating the plugin for testing purposes on Windows
 # To run:
-# 1. Comment out osx and linux `getPlatformObject` and change the
-#    reference line to `reference": `./${zipFileName}`,` in scripts/createPluginFile.js
-# 2. Run `./scripts/createForTestingOnWindows.ps1`
-# 3. Update dprint.json to point at ./plugin.exe-plugin then update checksum
+# 1. Run `./scripts/createForTestingOnWindows.ps1`
+# 2. Update dprint.json to point at ./plugin.exe-plugin then update checksum
 #    as shown when initially run.
 
-dotnet build -c Release --runtime win-x64
-Compress-Archive -Force -Path DprintPluginRoslyn/bin/Release/netcoreapp3.1/win-x64/* -DestinationPath dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
-node ./scripts/createPluginFile.js
+$ErrorActionPreference = "Stop"
+
+dotnet build DprintPluginRoslyn -c Release --runtime win-x64
+Compress-Archive -Force -Path DprintPluginRoslyn/bin/Release/net6.0/win-x64/* -DestinationPath dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
+deno run --allow-read=. --allow-write=. ./scripts/create_plugin_file.ts --test

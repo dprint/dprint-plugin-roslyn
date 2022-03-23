@@ -274,19 +274,22 @@ public class FormatTextMessage : Message
 public class FormatTextResponseMessage : Message
 {
     public byte[]? Content { get; }
+    public uint OriginalMessageId { get; }
 
-    public FormatTextResponseMessage(uint messageId, byte[]? content) : base(messageId, MessageKind.FormatTextResponse)
+    public FormatTextResponseMessage(uint messageId, uint originalMessageId, byte[]? content) : base(messageId, MessageKind.FormatTextResponse)
     {
+        OriginalMessageId = originalMessageId;
         Content = content;
     }
 
     public static FormatTextResponseMessage FromReader(uint messageId, MessageReader reader)
     {
+        var originalMessageId = reader.ReadUint();
         var kind = reader.ReadUint();
         return kind switch
         {
-            0 => new FormatTextResponseMessage(messageId, null),
-            1 => new FormatTextResponseMessage(messageId, reader.ReadVariableData()),
+            0 => new FormatTextResponseMessage(messageId, originalMessageId, null),
+            1 => new FormatTextResponseMessage(messageId, originalMessageId, reader.ReadVariableData()),
             _ => throw new Exception($"Unknown message kind: {kind}"),
         };
     }

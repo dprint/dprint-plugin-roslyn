@@ -42,6 +42,12 @@ public sealed class StdoutWriter : IDisposable
         });
     }
 
+    public void Dispose()
+    {
+        _disposeCts.Cancel();
+        _disposeCts.Dispose();
+    }
+
     public void SendSuccessResponse(uint originalMessageId)
     {
         SendMessage(new SuccessResponseMessage(_id.Next(), originalMessageId));
@@ -67,15 +73,14 @@ public sealed class StdoutWriter : IDisposable
         SendMessage(new ErrorResponseMessage(_id.Next(), originalMessageId, Encoding.UTF8.GetBytes(text)));
     }
 
-    public void SendMessage(Message message)
+    public void SendFormatTextResponse(uint originalMessageId, string? text)
     {
-        Task.Run(() => _writer.WriteAsync(message));
+        SendMessage(new FormatTextResponseMessage(_id.Next(), originalMessageId, text == null ? null :  Encoding.UTF8.GetBytes(text)));
     }
 
-    public void Dispose()
+    private void SendMessage(Message message)
     {
-        _disposeCts.Cancel();
-        _disposeCts.Dispose();
+        Task.Run(() => _writer.WriteAsync(message));
     }
 
     private static string ExceptionToString(Exception ex)

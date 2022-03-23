@@ -57,4 +57,3 @@ public class CSharpCodeFormatter : ICodeFormatter
             .Concat(ConfigurationHelpers.GetResolvedPluginConfig(options, typeof(CSharpFormattingOptions), _languageKeyPrefix));
     }
 }
-}

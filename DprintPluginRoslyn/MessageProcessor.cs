@@ -1,8 +1,10 @@
 ﻿using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Serialization;
+using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis.Text;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,6 +20,7 @@ public class MessageProcessor
     private readonly Workspace _workspace;
     private readonly StdoutWriter _stdoutWriter;
     private readonly JsonSerializer _serializer = new JsonSerializer();
+    private readonly ConcurrentStorage<CancellationTokenSource> _tokens = new();
 
     public MessageProcessor(StdoutWriter writer)
     {
@@ -27,7 +30,6 @@ public class MessageProcessor
 
     public void RunStdinMessageLoop(MessageReader reader)
     {
-        var tokens = new Dictionary<uint, CancellationTokenSource>();
         while (true)
         {
             var receivedMessage = Message.Read(reader);
@@ -80,11 +82,11 @@ public class MessageProcessor
                 case FormatTextMessage message:
                     StartFormatText(message);
                     break;
-                case FormatTextResponseMessage message:
-                    break;
                 case CancelFormatMessage message:
-                    if (tokens.TryGetValue(message.OriginalMessageId, out var token))
-                        token.Cancel();
+                    _tokens.Take(message.OriginalMessageId)?.Cancel();
+                    break;
+                case FormatTextResponseMessage message:
+                    // ignore, host formatting is not used by this plugin
                     break;
                 case SuccessResponseMessage:
                 case DataResponseMessage:
@@ -109,6 +111,9 @@ public class MessageProcessor
             var formatters = _workspace.GetFormatters(message.ConfigId, overrideConfig);
             var filePath = Encoding.UTF8.GetString(message.FilePath);
             var fileText = Encoding.UTF8.GetString(message.FileText);
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _tokens.StoreValue(message.MessageId, cts);
 
             // SAFETY - Ensure everything sent here is thread safe
             Task.Run(() =>
@@ -117,7 +122,11 @@ public class MessageProcessor
                 {
                     var range = GetTextSpan(message);
                     var result = formatters.FormatCode(filePath, fileText, range, token);
+                    _stdoutWriter.SendFormatTextResponse(message.MessageId, result == fileText ? null : result);
                 });
+
+                // release the token
+                _tokens.Take(message.MessageId);
             });
         });
 

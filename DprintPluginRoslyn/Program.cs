@@ -24,7 +24,7 @@ class Program
 
             EstablishSchemaVersion(reader, writer);
 
-            var stdoutWriter = new StdoutWriter(writer);
+            using var stdoutWriter = new StdoutWriter(writer);
             var messageProcessor = new MessageProcessor(stdoutWriter);
 
             messageProcessor.RunStdinMessageLoop(reader);
