@@ -31,7 +31,7 @@ jobs:
         cd ../win-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip ./*
     - name: Create plugin file
-      run: deno run --allow-read=. --allow-write=. scripts/create_plugin_file.js
+      run: deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts
 
     - name: Get tag version
       if: startsWith(github.ref, 'refs/tags/')
