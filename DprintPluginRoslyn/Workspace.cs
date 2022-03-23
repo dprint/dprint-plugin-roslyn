@@ -41,14 +41,19 @@ public class Workspace
         };
     }
 
-    public string FormatCode(string filePath, string code, TextSpan? range, uint configId, Dictionary<string, object> overrideConfig, CancellationToken token)
+    public OptionSet ResolveOptions(uint configId, Dictionary<string, object> overrideConfig)
+    {
+        var config = GetStoredConfig(configId);
+        var options = overrideConfig.Count == 0 ? config.DefaultConfig.Value : CreateOptions(config.GlobalConfig, config.PluginConfig, overrideConfig);
+        return options.Options;
+    }
+
+    public string FormatCode(string filePath, string code, TextSpan? range, OptionSet options, CancellationToken token)
     {
         var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
         if (formatter is null)
             throw new Exception($"Could not find formatter for file path: {filePath}");
-        var config = GetStoredConfig(configId);
-        var options = overrideConfig.Count == 0 ? config.DefaultConfig.Value : CreateOptions(config.GlobalConfig, config.PluginConfig, overrideConfig);
-        return formatter.FormatText(code, range, options.Options, token);
+        return formatter.FormatText(code, range, options, token);
     }
 
     public IReadOnlyList<ConfigurationDiagnostic> GetDiagnostics(uint configId)
