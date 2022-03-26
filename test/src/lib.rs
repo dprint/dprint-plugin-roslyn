@@ -85,7 +85,7 @@ mod test {
               token,
             )
             .await;
-          assert_eq!(result.unwrap(), Some("Namespace Test\nEnd Namespace\n".to_string().to_string()));
+          assert_eq!(result.unwrap(), Some("Namespace Test\nEnd Namespace\n".to_string()));
         }
       }));
       // test cancelling immediately
@@ -156,7 +156,9 @@ mod test {
   }
 
   async fn new_communicator() -> ProcessPluginCommunicator {
-    let exe_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../DprintPluginRoslyn/bin/Debug/net6.0/dprint-plugin-roslyn.exe");
+    let exe_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+      .join("../DprintPluginRoslyn/bin/Debug/net6.0/")
+      .join(if cfg!(windows) { "dprint-plugin-roslyn.exe" } else { "dprint-plugin-roslyn" });
     let noop_host = Arc::new(NoopHost);
     ProcessPluginCommunicator::new(&exe_path, |err| eprintln!("{}", err), noop_host).await.unwrap()
   }
