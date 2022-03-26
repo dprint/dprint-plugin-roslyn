@@ -1,184 +1,189 @@
 ﻿using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Configuration;
+using Dprint.Plugins.Roslyn.Serialization;
+using Dprint.Plugins.Roslyn.Utils;
+using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Dprint.Plugins.Roslyn
+namespace Dprint.Plugins.Roslyn;
+
+public class MessageProcessor
 {
-  enum MessageKind
-  {
-    GetPluginSchemaVersion = 0,
-    GetPluginInfo = 1,
-    GetLicenseText = 2,
-    GetResolvedConfig = 3,
-    SetGlobalConfig = 4,
-    SetPluginConfig = 5,
-    GetConfigDiagnostics = 6,
-    FormatText = 7,
-    Close = 8,
-  }
-
-  enum ResponseKind
-  {
-    Success = 0,
-    Error = 1,
-  }
-
-  enum FormatResult
-  {
-    NoChange = 0,
-    Change = 1,
-  }
-
-  public class MessageProcessor
-  {
-    private readonly StdIoMessenger _messenger;
     private readonly Workspace _workspace;
+    private readonly StdoutWriter _stdoutWriter;
+    private readonly JsonSerializer _serializer = new JsonSerializer();
+    private readonly ConcurrentStorage<CancellationTokenSource> _tokens = new();
 
-    public MessageProcessor(StdIoMessenger messenger, Workspace workspace)
+    public MessageProcessor(StdoutWriter writer)
     {
-      _messenger = messenger;
-      _workspace = workspace;
+        _workspace = new Workspace();
+        _stdoutWriter = writer;
     }
 
-    public void RunBlockingMessageLoop()
+    public void RunStdinMessageLoop(MessageReader reader)
     {
-      while (true)
-      {
-        var messageKind = _messenger.ReadCode();
+        while (true)
+        {
+            var receivedMessage = Message.Read(reader);
+            switch (receivedMessage)
+            {
+                case ErrorResponseMessage message:
+                    break;
+                case ShutdownMessage message:
+                    return; // exit
+                case ActiveMessage message:
+                    _stdoutWriter.SendSuccessResponse(message.MessageId);
+                    break;
+                case GetPluginInfoMessage message:
+                    _stdoutWriter.SendDataResponse(message.MessageId, GetPluginInfo());
+                    break;
+                case GetLicenseTextMessage message:
+                    _stdoutWriter.SendDataResponse(message.MessageId, ReadLicenseText());
+                    break;
+                case RegisterConfigMessage message:
+                    TryAction(message.MessageId, () =>
+                    {
+                        var globalConfig = _serializer.Deserialize<GlobalConfiguration>(message.GlobalConfigData);
+                        var pluginConfig = _serializer.Deserialize<Dictionary<string, object>>(message.PluginConfigData);
+                        _workspace.SetConfig(message.ConfigId, globalConfig, pluginConfig);
+                        _stdoutWriter.SendSuccessResponse(message.MessageId);
+                    });
+                    break;
+                case ReleaseConfigMessage message:
+                    TryAction(message.MessageId, () =>
+                    {
+                        _workspace.ReleaseConfig(message.ConfigId);
+                        _stdoutWriter.SendSuccessResponse(message.MessageId);
+                    });
+                    break;
+                case GetConfigDiagnosticsMessage message:
+                    TryAction(message.MessageId, () =>
+                    {
+                        var jsonDiagnostics = _serializer.Serialize(_workspace.GetDiagnostics(message.ConfigId));
+                        _stdoutWriter.SendDataResponse(message.MessageId, jsonDiagnostics);
+                    });
+                    break;
+                case GetResolvedConfigMessage message:
+                    TryAction(message.MessageId, () =>
+                    {
+                        var formatters = _workspace.GetFormatters(message.ConfigId);
+                        var jsonConfig = _serializer.Serialize(formatters.GetResolvedConfig());
+                        _stdoutWriter.SendDataResponse(message.MessageId, jsonConfig);
+                    });
+                    break;
+                case FormatTextMessage message:
+                    StartFormatText(message);
+                    break;
+                case CancelFormatMessage message:
+                    _tokens.Take(message.OriginalMessageId)?.Cancel();
+                    break;
+                case FormatTextResponseMessage message:
+                    // ignore, host formatting is not used by this plugin
+                    break;
+                case SuccessResponseMessage:
+                case DataResponseMessage:
+                    // ignore
+                    break;
+                case HostFormatMessage message:
+                    _stdoutWriter.SendError(message.MessageId, "Cannot host format with a plugin.");
+                    break;
+                default:
+                    // exit the process
+                    throw new NotImplementedException($"Unimlemented message: {receivedMessage.GetType().FullName}");
+            }
+        }
+    }
+
+    private void StartFormatText(FormatTextMessage message)
+    {
+        TryAction(message.MessageId, () =>
+        {
+            // workspace is not thread safe, so keep it here
+            var overrideConfig = _serializer.Deserialize<Dictionary<string, object>>(message.OverrideConfig);
+            var formatters = _workspace.GetFormatters(message.ConfigId, overrideConfig);
+            var filePath = Encoding.UTF8.GetString(message.FilePath);
+            var fileText = Encoding.UTF8.GetString(message.FileText);
+            var cts = new CancellationTokenSource();
+            var token = cts.Token;
+            _tokens.StoreValue(message.MessageId, cts);
+
+            // SAFETY - Ensure everything sent here is thread safe
+            Task.Run(() =>
+            {
+                TryAction(message.MessageId, () =>
+                {
+                    var range = GetTextSpan(message);
+                    var result = formatters.FormatCode(filePath, fileText, range, token);
+                    _stdoutWriter.SendFormatTextResponse(message.MessageId, result == fileText ? null : result);
+                });
+
+                // release the token
+                _tokens.Take(message.MessageId);
+            });
+        });
+
+        static TextSpan? GetTextSpan(FormatTextMessage message)
+        {
+            if (message.StartByteIndex == 0 && message.FileText.Length == message.EndByteIndex)
+                return null;
+            return new TextSpan(
+                ByteToCharIndex(message.StartByteIndex, message.FileText),
+                ByteToCharIndex(message.EndByteIndex, message.FileText)
+            );
+        }
+
+        static int ByteToCharIndex(uint index, byte[] text)
+        {
+            // seems very inefficient. Better way?
+            return Encoding.UTF8.GetString(text[0..(int)index]).Length;
+        }
+    }
+
+    private void TryAction(uint originalMessageId, Action action)
+    {
         try
         {
-          if (!HandleMessageKind((MessageKind)messageKind))
-            return;
+            action();
         }
         catch (Exception ex)
         {
-          var sb = new StringBuilder();
-          sb.Append(ex.Message);
-          if (ex.StackTrace != null)
-          {
-            sb.Append("\n");
-            sb.Append(ex.StackTrace);
-          }
-          SendErrorResponse(sb.ToString());
+            _stdoutWriter.SendError(originalMessageId, ex);
         }
-      }
-    }
-
-    private bool HandleMessageKind(MessageKind messageKind)
-    {
-      switch (messageKind)
-      {
-        case MessageKind.Close:
-          return false;
-        case MessageKind.GetPluginSchemaVersion:
-          _messenger.ReadZeroPartMessage();
-          SendSuccess(MessagePart.FromInt(3));
-          break;
-        case MessageKind.GetPluginInfo:
-          _messenger.ReadZeroPartMessage();
-          SendSuccess(MessagePart.FromString(GetPluginInfo()));
-          break;
-        case MessageKind.GetLicenseText:
-          _messenger.ReadZeroPartMessage();
-          SendSuccess(MessagePart.FromString(ReadLicenseText()));
-          break;
-        case MessageKind.GetResolvedConfig:
-          {
-            _messenger.ReadZeroPartMessage();
-            var config = _workspace.GetResolvedConfig();
-            SendSuccess(MessagePart.FromString(new Serialization.JsonSerializer().Serialize(config)));
-            break;
-          }
-        case MessageKind.SetGlobalConfig:
-          {
-            var message = _messenger.ReadSinglePartMessage();
-            var globalConfig = new Serialization.JsonSerializer().Deserialize<GlobalConfiguration>(message.IntoString());
-            _workspace.SetGlobalConfig(globalConfig);
-            SendSuccess();
-            break;
-          }
-        case MessageKind.SetPluginConfig:
-          {
-            var message = _messenger.ReadSinglePartMessage();
-            var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(message.IntoString());
-            _workspace.SetPluginConfig(pluginConfig);
-            SendSuccess();
-            break;
-          }
-        case MessageKind.GetConfigDiagnostics:
-          {
-            _messenger.ReadZeroPartMessage();
-            var diagnostics = _workspace.GetDiagnostics();
-            SendSuccess(MessagePart.FromString(new Serialization.JsonSerializer().Serialize(diagnostics)));
-            break;
-          }
-        case MessageKind.FormatText:
-          {
-            var message = _messenger.ReadMultiPartMessage(3);
-            var filePath = message[0].IntoString();
-            var fileText = message[1].IntoString();
-            var overrideConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(message[2].IntoString());
-            var formattedText = _workspace.FormatCode(filePath, fileText, overrideConfig);
-            if (formattedText == fileText)
-              SendSuccess(MessagePart.FromInt((int)FormatResult.NoChange));
-            else
-            {
-              SendSuccess(
-                  MessagePart.FromInt((int)FormatResult.Change),
-                  MessagePart.FromString(formattedText)
-              );
-            }
-            break;
-          }
-        default:
-          throw new NotImplementedException($"Unhandled message kind: {messageKind}");
-      }
-
-      return true;
-    }
-
-    private void SendSuccess(params MessagePart[] messageParts)
-    {
-      _messenger.SendMessage((int)ResponseKind.Success, messageParts);
-    }
-
-    private void SendErrorResponse(string message)
-    {
-      _messenger.SendMessage((int)ResponseKind.Error, MessagePart.FromString(message));
     }
 
     private static string GetPluginInfo()
     {
-      var sb = new StringBuilder();
-      sb.Append("{");
-      sb.Append(@"""name"":""dprint-plugin-roslyn"",");
-      sb.Append($@"""version"":""{GetAssemblyVersion()}"",");
-      sb.Append(@"""configKey"":""roslyn"",");
-      sb.Append(@"""fileExtensions"":[""cs"",""vb""],");
-      sb.Append(@"""helpUrl"":""https://dprint.dev/plugins/roslyn"",");
-      sb.Append(@"""configSchemaUrl"":"""",");
-      sb.Append(@"""updateUrl"":""https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json""");
-      sb.Append("}");
-      return sb.ToString();
+        var sb = new StringBuilder();
+        sb.Append("{");
+        sb.Append(@"""name"":""dprint-plugin-roslyn"",");
+        sb.Append($@"""version"":""{GetAssemblyVersion()}"",");
+        sb.Append(@"""configKey"":""roslyn"",");
+        sb.Append(@"""fileExtensions"":[""cs"",""vb""],");
+        sb.Append(@"""helpUrl"":""https://dprint.dev/plugins/roslyn"",");
+        sb.Append(@"""configSchemaUrl"":"""",");
+        sb.Append(@"""updateUrl"":""https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json""");
+        sb.Append("}");
+        return sb.ToString();
     }
 
     private static string GetAssemblyVersion()
     {
-      var assembly = Assembly.GetExecutingAssembly();
-      var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
-      return $"{fileVersionInfo.FileMajorPart}.{fileVersionInfo.FileMinorPart}.{fileVersionInfo.FileBuildPart}";
+        var assembly = Assembly.GetExecutingAssembly();
+        var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+        return $"{fileVersionInfo.FileMajorPart}.{fileVersionInfo.FileMinorPart}.{fileVersionInfo.FileBuildPart}";
     }
 
     private static string ReadLicenseText()
     {
-      using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Dprint.Plugins.Roslyn.LICENSE") ?? throw new Exception("Could not find license text.");
-      using var reader = new StreamReader(stream);
-      return reader.ReadToEnd();
+        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Dprint.Plugins.Roslyn.LICENSE") ?? throw new Exception("Could not find license text.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
-  }
 }

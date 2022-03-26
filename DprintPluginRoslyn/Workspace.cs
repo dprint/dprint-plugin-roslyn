@@ -7,124 +7,115 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Dprint.Plugins.Roslyn
+namespace Dprint.Plugins.Roslyn;
+
+public class ResolvedContext
 {
-  public class Workspace
-  {
-    private readonly AdhocWorkspace _workspace;
-    private readonly ICodeFormatter[] _codeFormatters;
+    public IReadOnlyList<ConfigurationDiagnostic> Diagnostics { get; init; } = null!;
+    public OptionSet Options { get; init; } = null!;
+    public AdhocWorkspace AdhocWorkspace { get; init; } = null!;
+    public CodeFormatters Formatters { get; init; } = null!;
+}
 
-    private GlobalConfiguration? _globalConfig;
-    private Dictionary<string, object>? _pluginConfig;
-    private List<ConfigurationDiagnostic> _diagnostics = new List<ConfigurationDiagnostic>();
-    private OptionSet? _options;
+public class StoredConfig
+{
+    public IReadOnlyDictionary<string, object> PluginConfig { get; init; } = null!;
+    public GlobalConfiguration GlobalConfig { get; init; } = null!;
+    public Lazy<ResolvedContext> DefaultContext { get; init; } = null!;
+}
 
-    public Workspace()
+/// <summary>
+/// Not thread safe.
+/// </summary>
+public class Workspace
+{
+    private readonly Dictionary<uint, StoredConfig> _configs = new();
+
+    public CodeFormatters GetFormatters(uint configId, Dictionary<string, object>? overrideConfig = null)
     {
-      _workspace = new AdhocWorkspace();
-      _codeFormatters = new ICodeFormatter[]
-      {
-                new CSharpCodeFormatter(_workspace),
-                new VisualBasicCodeFormatter(_workspace),
-      };
+        var config = GetStoredConfig(configId);
+        var context = overrideConfig == null || overrideConfig.Count == 0
+            ? config.DefaultContext.Value
+            : CreateResolvedContext(config.GlobalConfig, config.PluginConfig, overrideConfig);
+        return context.Formatters;
     }
 
-    public IReadOnlyList<ConfigurationDiagnostic> GetDiagnostics()
+    public IReadOnlyList<ConfigurationDiagnostic> GetDiagnostics(uint configId)
     {
-      GetOptions(); // ensures set
-      return _diagnostics;
+        return GetStoredConfig(configId).DefaultContext.Value.Diagnostics;
     }
 
-    public void SetGlobalConfig(GlobalConfiguration globalConfig)
+    public void SetConfig(uint configId, GlobalConfiguration globalConfig, Dictionary<string, object> pluginConfig)
     {
-      _globalConfig = globalConfig;
-      ResetConfig();
+        _configs[configId] = new StoredConfig
+        {
+            GlobalConfig = globalConfig,
+            PluginConfig = pluginConfig,
+            DefaultContext = new Lazy<ResolvedContext>(() => CreateResolvedContext(globalConfig, pluginConfig, new Dictionary<string, object>())),
+        };
     }
 
-    public void SetPluginConfig(Dictionary<string, object> pluginConfig)
+    public void ReleaseConfig(uint configId)
     {
-      _pluginConfig = pluginConfig;
-      ResetConfig();
+        _configs.Remove(configId, out var _);
     }
 
-    public Dictionary<string, object> GetResolvedConfig()
+    private StoredConfig GetStoredConfig(uint configId)
     {
-      var config = new Dictionary<string, object>();
-      var options = GetOptions();
-
-      foreach (var formatter in _codeFormatters)
-      {
-        foreach (var (key, value) in formatter.GetResolvedConfig(options))
-          config[key] = value;
-      }
-
-      return config;
+        if (_configs.TryGetValue(configId, out var value))
+            return value;
+        else
+            throw new ArgumentOutOfRangeException(nameof(configId), $"Could not find configuration id: {configId}");
     }
 
-    public string FormatCode(string filePath, string code, Dictionary<string, object> overrideConfig)
+    private ResolvedContext CreateResolvedContext(
+        GlobalConfiguration globalConfig,
+        IReadOnlyDictionary<string, object> readonlyPluginConfig,
+        IReadOnlyDictionary<string, object> overrideConfig
+    )
     {
-      var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
-      if (formatter is null)
-        throw new Exception($"Could not find formatter for file path: {filePath}");
-      var options = overrideConfig.Count == 0 ? GetOptions() : CreateOptions(overrideConfig).Item1;
-      return formatter.FormatText(code, GetOptions());
+        var workspace = new AdhocWorkspace();
+        var formatters = new ICodeFormatter[]
+        {
+            new CSharpCodeFormatter(workspace),
+            new VisualBasicCodeFormatter(workspace),
+        };
+        var pluginConfig = readonlyPluginConfig.ToDictionary(kv => kv.Key, kv => kv.Value);
+        foreach (var (key, value) in overrideConfig)
+        {
+            pluginConfig[key] = value;
+        }
+
+        var context = new ConfigurationResolutionContext(pluginConfig, workspace.Options);
+        var languages = formatters.Select(f => f.RoslynLanguageName).ToList();
+
+        if (globalConfig.IndentWidth.HasValue)
+        {
+            context.ChangeOption(FormattingOptions.IndentationSize, languages, globalConfig.IndentWidth.Value);
+            context.ChangeOption(FormattingOptions.TabSize, languages, globalConfig.IndentWidth.Value);
+        }
+        if (globalConfig.UseTabs.HasValue)
+            context.ChangeOption(FormattingOptions.UseTabs, languages, globalConfig.UseTabs.Value);
+        if (globalConfig.NewLineKind != null)
+            context.ChangeOption(FormattingOptions.NewLine, languages, ConfigurationHelpers.GetNewLineKind(context, "newLineKind", globalConfig.NewLineKind));
+
+        ConfigurationHelpers.HandleGlobalConfig(context, string.Empty, languages);
+
+        foreach (var formatter in formatters)
+            formatter.ResolveConfiguration(context);
+
+        // add unhandled configuration diagnostics
+        foreach (var configKey in context.GetConfigKeys())
+            context.AddDiagnostic(configKey, "Unknown configuration property name.");
+
+        // finalize state
+        var options = context.GetOptions();
+        return new ResolvedContext
+        {
+            Options = options,
+            Diagnostics = context.GetDiagnostics().ToList(),
+            AdhocWorkspace = workspace,
+            Formatters = new CodeFormatters(formatters, options),
+        };
     }
-
-    private OptionSet GetOptions()
-    {
-      if (_options != null)
-        return _options;
-
-      var (options, diagnostics) = CreateOptions(new Dictionary<string, object>());
-
-      // finalize state
-      _diagnostics.Clear();
-      _diagnostics.AddRange(diagnostics);
-      _options = options;
-
-      return _options;
-    }
-
-    private (OptionSet, List<ConfigurationDiagnostic>) CreateOptions(Dictionary<string, object> overrideConfig)
-    {
-      var globalConfig = _globalConfig ?? new GlobalConfiguration();
-      var pluginConfig = new Dictionary<string, object>(_pluginConfig ?? new Dictionary<string, object>());
-
-      foreach (var (key, value) in overrideConfig)
-      {
-        pluginConfig[key] = value;
-      }
-
-      var context = new ConfigurationResolutionContext(pluginConfig, _workspace.Options);
-      var languages = _codeFormatters.Select(f => f.RoslynLanguageName).ToList();
-
-      if (globalConfig.IndentWidth.HasValue)
-      {
-        context.ChangeOption(FormattingOptions.IndentationSize, languages, globalConfig.IndentWidth.Value);
-        context.ChangeOption(FormattingOptions.TabSize, languages, globalConfig.IndentWidth.Value);
-      }
-      if (globalConfig.UseTabs.HasValue)
-        context.ChangeOption(FormattingOptions.UseTabs, languages, globalConfig.UseTabs.Value);
-      if (globalConfig.NewLineKind != null)
-        context.ChangeOption(FormattingOptions.NewLine, languages, ConfigurationHelpers.GetNewLineKind(context, "newLineKind", globalConfig.NewLineKind));
-
-      ConfigurationHelpers.HandleGlobalConfig(context, string.Empty, languages);
-
-      foreach (var formatter in _codeFormatters)
-        formatter.ResolveConfiguration(context);
-
-      // add unhandled configuration diagnostics
-      foreach (var configKey in context.GetConfigKeys())
-        context.AddDiagnostic(configKey, "Unknown configuration property name.");
-
-      // finalize state
-      return (context.GetOptions(), context.GetDiagnostics().ToList());
-    }
-
-    private void ResetConfig()
-    {
-      _options = null;
-      _diagnostics.Clear();
-    }
-  }
 }
