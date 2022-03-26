@@ -296,6 +296,7 @@ public class FormatTextResponseMessage : Message
 
     protected override void WriteBody(MessageWriter writer)
     {
+        writer.WriteUint(OriginalMessageId);
         if (Content == null)
         {
             writer.WriteUint(0);

@@ -4,7 +4,6 @@ using Dprint.Plugins.Roslyn.Serialization;
 using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis.Text;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
