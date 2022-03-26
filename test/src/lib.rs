@@ -51,10 +51,25 @@ mod test {
           None,
           1,
           Default::default(),
-          token,
+          token.clone(),
         )
         .await;
       assert_eq!(result.unwrap(), Some("namespace Test { }\n".to_string()));
+      let result = communicator
+        .format_text(
+          PathBuf::from("other.cs"),
+          "namespace Test    {\n    class   Test{}\n   }\n".to_string(),
+          Some(24..38), // just the class
+          1,
+          {
+            let mut config = ConfigKeyMap::new();
+            config.insert("csharp.newLineKind".to_string(), "lf".into());
+            config
+          },
+          token.clone(),
+        )
+        .await;
+      assert_eq!(result.unwrap(), Some("namespace Test    {\n    class Test { }\n}\n".to_string(),));
     }
 
     let mut handles = Vec::new();
