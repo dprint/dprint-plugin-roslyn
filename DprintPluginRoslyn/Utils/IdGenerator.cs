@@ -7,10 +7,10 @@ namespace Dprint.Plugins.Roslyn.Utils;
 /// </summary>
 public class IdGenerator
 {
-    private uint _counter = 0;
+  private uint _counter = 0;
 
-    public uint Next()
-    {
-        return Interlocked.Increment(ref _counter);
-    }
+  public uint Next()
+  {
+    return Interlocked.Increment(ref _counter);
+  }
 }
