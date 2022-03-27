@@ -168,6 +168,8 @@ mod test {
       .unwrap()
       .to_string()
       .starts_with("Could not find configuration id: 1"));
+
+    communicator.shutdown().await;
   }
 
   async fn new_communicator() -> ProcessPluginCommunicator {
