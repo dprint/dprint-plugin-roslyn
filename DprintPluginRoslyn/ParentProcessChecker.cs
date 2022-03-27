@@ -12,47 +12,47 @@ namespace Dprint.Plugins.Roslyn;
 /// </remarks>
 public class ParentProcessChecker
 {
-  private const int POLLING_MS = 30_000;
-  private readonly int _processId;
+    private const int POLLING_MS = 30_000;
+    private readonly int _processId;
 
-  public ParentProcessChecker(int processId)
-  {
-    _processId = processId;
-  }
-
-  public async Task RunCheckerLoop()
-  {
-    // Note: I don't believe I can use process.Exited here. Doing a brief look
-    // at the source code, that only seems to apply if spawning a process.
-    // Anyway, this will be reliable enough.
-    while (true)
+    public ParentProcessChecker(int processId)
     {
-      await Task.Delay(POLLING_MS).ConfigureAwait(false);
-
-      if (!IsProcessActive)
-        ExitCurrentProcessWithErrorCode();
+        _processId = processId;
     }
-  }
 
-  public bool IsProcessActive
-  {
-    get
+    public async Task RunCheckerLoop()
     {
-      try
-      {
-        var process = Process.GetProcessById(_processId);
-        return process != null && !process.HasExited;
-      }
-      catch
-      {
-        // it is not running
-        return false;
-      }
-    }
-  }
+        // Note: I don't believe I can use process.Exited here. Doing a brief look
+        // at the source code, that only seems to apply if spawning a process.
+        // Anyway, this will be reliable enough.
+        while (true)
+        {
+            await Task.Delay(POLLING_MS).ConfigureAwait(false);
 
-  public void ExitCurrentProcessWithErrorCode()
-  {
-    Environment.Exit(1);
-  }
+            if (!IsProcessActive)
+                ExitCurrentProcessWithErrorCode();
+        }
+    }
+
+    public bool IsProcessActive
+    {
+        get
+        {
+            try
+            {
+                var process = Process.GetProcessById(_processId);
+                return process != null && !process.HasExited;
+            }
+            catch
+            {
+                // it is not running
+                return false;
+            }
+        }
+    }
+
+    public void ExitCurrentProcessWithErrorCode()
+    {
+        Environment.Exit(1);
+    }
 }

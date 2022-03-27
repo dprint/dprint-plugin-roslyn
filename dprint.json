@@ -1,6 +1,10 @@
 {
   "incremental": true,
   "indentWidth": 2,
+  "roslyn": {
+    "indentWidth": 4,
+    "newLineKind": "crlf"
+  },
   "includes": ["**/*.{json,md,cs,js}"],
   "excludes": [
     "**/*-lock.json",
