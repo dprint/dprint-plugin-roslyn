@@ -16,6 +16,7 @@ await processPlugin.createDprintOrgProcessPlugin({
   version,
   platforms: [
     "darwin-x86_64",
+    "darwin-aarch64",
     "linux-x86_64",
     "windows-x86_64",
   ],
