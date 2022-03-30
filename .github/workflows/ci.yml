@@ -43,7 +43,7 @@ jobs:
       run: |
         cd DprintPluginRoslyn/bin/Release/net6.0/osx-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-apple-darwin.zip ./*
-        cd DprintPluginRoslyn/bin/Release/net6.0/osx.12-arm64
+        cd ../osx.12-arm64
         zip -r ../../../../../dprint-plugin-roslyn-aarch64-apple-darwin.zip ./*
         cd ../linux-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip ./*
