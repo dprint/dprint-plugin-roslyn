@@ -42,6 +42,7 @@ jobs:
     - name: Package
       run: |
         RELEASE_DIR=$GITHUB_WORKSPACE/DprintPluginRoslyn/bin/Release/net6.0
+        # cd to each output directory so we only include its files
         cd $RELEASE_DIR/osx-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-apple-darwin.zip ./*
         cd $RELEASE_DIR/osx.12-arm64
