@@ -12,9 +12,9 @@
     "**/bin"
   ],
   "plugins": [
-    "https://plugins.dprint.dev/typescript-0.65.1.wasm",
-    "https://plugins.dprint.dev/json-0.14.1.wasm",
-    "https://plugins.dprint.dev/markdown-0.12.2.wasm",
-    "https://plugins.dprint.dev/roslyn-0.6.0.exe-plugin@a8885422bfacead80df8dfe9cdde9d3cca70b410207331dc1b16534441e69de8"
+    "https://plugins.dprint.dev/typescript-0.66.0.wasm",
+    "https://plugins.dprint.dev/json-0.15.0.wasm",
+    "https://plugins.dprint.dev/markdown-0.13.0.wasm",
+    "https://plugins.dprint.dev/roslyn-0.6.3.exe-plugin@5ee82fe51bfe6b3bf9f91d68512386a2010dc5013ceeba3b4f2c46b9bfc319c8"
   ]
 }

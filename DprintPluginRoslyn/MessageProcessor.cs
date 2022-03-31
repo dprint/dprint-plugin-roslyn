@@ -119,13 +119,13 @@ public class MessageProcessor
             {
                 TryAction(message.MessageId, () =>
                 {
-                          var range = GetTextSpan(message);
-                          var result = formatters.FormatCode(filePath, fileText, range, token);
-                          _stdoutWriter.SendFormatTextResponse(message.MessageId, result == fileText ? null : result);
-                      });
+                    var range = GetTextSpan(message);
+                    var result = formatters.FormatCode(filePath, fileText, range, token);
+                    _stdoutWriter.SendFormatTextResponse(message.MessageId, result == fileText ? null : result);
+                });
 
-            // release the token
-            _tokens.Take(message.MessageId);
+                // release the token
+                _tokens.Take(message.MessageId);
             });
         });
 
