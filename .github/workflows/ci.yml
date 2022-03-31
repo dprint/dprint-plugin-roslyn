@@ -42,10 +42,14 @@ jobs:
     - name: Package
       run: |
         RELEASE_DIR=$GITHUB_WORKSPACE/DprintPluginRoslyn/bin/Release/net6.0
-        zip -r dprint-plugin-roslyn-x86_64-apple-darwin.zip $RELEASE_DIR/osx-x64/*
-        zip -r dprint-plugin-roslyn-aarch64-apple-darwin.zip $RELEASE_DIR/osx.12-arm64/*
-        zip -r dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip $RELEASE_DIR/linux-x64/*
-        zip -r dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip $RELEASE_DIR/win-x64/*
+        cd $RELEASE_DIR/osx-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-apple-darwin.zip ./*
+        cd $RELEASE_DIR/osx.12-arm64
+        zip -r ../../../../../dprint-plugin-roslyn-aarch64-apple-darwin.zip ./*
+        cd $RELEASE_DIR/linux-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip ./*
+        cd $RELEASE_DIR/win-x64
+        zip -r ../../../../../dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip ./*
     - name: Create plugin file
       run: deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts
 
