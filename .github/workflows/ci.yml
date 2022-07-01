@@ -36,6 +36,7 @@ jobs:
       run: |
         dotnet build DprintPluginRoslyn -c Release --self-contained --runtime win-x64
         dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-x64
+        dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-arm64
         dotnet build DprintPluginRoslyn -c Release --self-contained --runtime osx-x64
         dotnet build DprintPluginRoslyn -c Release --self-contained --runtime osx.12-arm64
 
@@ -49,6 +50,8 @@ jobs:
         zip -r ../../../../../dprint-plugin-roslyn-aarch64-apple-darwin.zip ./*
         cd $RELEASE_DIR/linux-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip ./*
+        cd $RELEASE_DIR/linux-arm64
+        zip -r ../../../../../dprint-plugin-roslyn-aarch64-unknown-linux-gnu.zip ./*
         cd $RELEASE_DIR/win-x64
         zip -r ../../../../../dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip ./*
     - name: Create plugin file
@@ -74,6 +77,7 @@ jobs:
           dprint-plugin-roslyn-x86_64-apple-darwin.zip
           dprint-plugin-roslyn-aarch64-apple-darwin.zip
           dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip
+          dprint-plugin-roslyn-aarch64-unknown-linux-gnu.zip
           dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
           plugin.json
         body: |
