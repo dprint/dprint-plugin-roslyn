@@ -5,7 +5,7 @@
     "indentWidth": 4,
     "newLineKind": "crlf"
   },
-  "includes": ["**/*.{json,md,cs,js}"],
+  "includes": ["**/*.{json,md,cs,js,ts}"],
   "excludes": [
     "**/*-lock.json",
     "**/obj",
