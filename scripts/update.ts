@@ -3,12 +3,14 @@ import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
 
 const rootDirPath = path.dirname(path.dirname(path.fromFileUrl(import.meta.url)));
 
+console.log("Installing dotnet-outdated-tool...");
 try {
   await runCommand("dotnet tool install --global dotnet-outdated-tool".split(" "));
 } catch {
   // ignore, installed
 }
 
+console.log("Upgrading packages...");
 await runCommand("dotnet outdated --upgrade".split(" "));
 
 if (!hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
@@ -16,17 +18,20 @@ if (!hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
   Deno.exit(0);
 }
 
+console.log("Found changes. Bumping version...");
 const newVersion = await bumpMinorVersion();
 
 // run the tests
+console.log("Running tests...");
 await runCommand("dotnet test".split(" "));
 
 // release
+console.log(`Committing and publishing ${newVersion}...`);
 await runCommand("git add .".split(" "));
 await runCommand(`git commit -m ${newVersion}`.split(" "));
-await runCommand(`git push upstream main`.split(" "));
+await runCommand(`git push origin main`.split(" "));
 await runCommand(`git tag ${newVersion}`.split(" "));
-await runCommand(`git push upstream ${newVersion}`.split(" "));
+await runCommand(`git push origin ${newVersion}`.split(" "));
 
 async function bumpMinorVersion() {
   const projectFile = path.join(rootDirPath, "./DprintPluginRoslyn/DprintPluginRoslyn.csproj");

@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
   schedule:
     # do this once a week
-    - cron: "0 12 * * 2"
+    - cron: "0 7 * * 2"
 
 jobs:
   build:
-    name: version bump
-    runs-on: ubuntu-20.04-xl
-    timeout-minutes: 90
+    name: check updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     env:
       CARGO_TERM_COLOR: always
@@ -29,6 +29,9 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Run script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_ROSLYN_REPO_PAT }}
         run: |
-          git remote add upstream https://github.com/dprint/dprint-plugin-roslyn
-          ./scripts/update.ts
+          git config user.email "dsherret@users.noreply.github.com"
+          git config user.name "dsherret"
+          deno run -A ./scripts/update.ts
