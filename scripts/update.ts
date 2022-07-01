@@ -17,7 +17,7 @@ try {
 console.log("Upgrading packages...");
 await runCommand("dotnet outdated --upgrade".split(" "));
 
-if (!hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
+if (!await hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
   console.log("No changes.");
   Deno.exit(0);
 }
