@@ -1,3 +1,7 @@
+/**
+ * This script crudely checks for any Roslyn updates and then automatically
+ * publishes a new version of the plugin if so.
+ */
 import * as path from "https://deno.land/std@0.130.0/path/mod.ts";
 import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
 

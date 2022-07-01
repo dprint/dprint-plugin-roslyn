@@ -21,7 +21,7 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GH_ROSLYN_REPO_PAT }}
+          token: ${{ secrets.GH_DPRINTBOT_PAT }}
 
       - uses: denoland/setup-deno@v1
       - uses: actions/setup-dotnet@v1
@@ -29,9 +29,7 @@ jobs:
           dotnet-version: '6.0.x'
 
       - name: Run script
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_ROSLYN_REPO_PAT }}
         run: |
-          git config user.email "dsherret@users.noreply.github.com"
-          git config user.name "dsherret"
+          git config user.email "dprintbot@users.noreply.github.com"
+          git config user.name "dprintbot"
           deno run -A ./scripts/update.ts
