@@ -56,7 +56,7 @@ async function runCommand(cmd: string[]) {
     cmd,
     cwd: rootDirPath,
   });
-  const status = await p.status()
+  const status = await p.status();
   p.close();
   if (status.code !== 0) {
     throw new Error("Failed.");

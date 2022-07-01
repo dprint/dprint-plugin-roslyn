@@ -22,4 +22,3 @@ await processPlugin.createDprintOrgProcessPlugin({
   ],
   isTest: Deno.args.some(a => a == "--test"),
 });
-
