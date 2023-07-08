@@ -5,16 +5,18 @@
     "indentWidth": 4,
     "newLineKind": "crlf"
   },
-  "includes": ["**/*.{json,md,cs,js,ts}"],
   "excludes": [
     "**/*-lock.json",
     "**/obj",
-    "**/bin"
+    "**/bin",
+    "**/target",
+    "**/.vs"
   ],
   "plugins": [
     "https://plugins.dprint.dev/typescript-0.66.0.wasm",
     "https://plugins.dprint.dev/json-0.15.0.wasm",
     "https://plugins.dprint.dev/markdown-0.13.0.wasm",
-    "https://plugins.dprint.dev/roslyn-0.6.3.exe-plugin@5ee82fe51bfe6b3bf9f91d68512386a2010dc5013ceeba3b4f2c46b9bfc319c8"
+    "https://plugins.dprint.dev/roslyn-0.13.0.json@2bfa2e67a02b84aa2d23f78ce0f00149cd681078a4a646cf546af804e632e6cf",
+    "https://plugins.dprint.dev/prettier-0.26.1.json@fdbe31f6aecd24f9d6b924214710a6766050d03146163b4e241e6056b2462f2e"
   ]
 }
