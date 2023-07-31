@@ -52,9 +52,11 @@ class Program
         if (request != 0)
             throw new Exception("Expected a schema version request of `0`.");
 
-        // 2. The client responds with `0` (4 bytes) for success, then `4` (4 bytes) for the schema version.
+        // 2. The client responds with `0` (4 bytes) for success
         writer.WriteUint(0);
-        writer.WriteUint(4);
+        // 3. Then 4 bytes for the schema version.
+        const uint SCHEMA_VERSION = 5;
+        writer.WriteUint(SCHEMA_VERSION);
         writer.Flush();
     }
 }

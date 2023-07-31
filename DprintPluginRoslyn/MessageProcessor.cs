@@ -70,12 +70,21 @@ public class MessageProcessor
                         _stdoutWriter.SendDataResponse(message.MessageId, jsonDiagnostics);
                     });
                     break;
+                case GetFileMatchingInfo message:
+                    _stdoutWriter.SendDataResponse(message.MessageId, GetFileMatchingInfo());
+                    break;
                 case GetResolvedConfigMessage message:
                     TryAction(message.MessageId, () =>
                     {
                         var formatters = _workspace.GetFormatters(message.ConfigId);
                         var jsonConfig = _serializer.Serialize(formatters.GetResolvedConfig());
                         _stdoutWriter.SendDataResponse(message.MessageId, jsonConfig);
+                    });
+                    break;
+                case CheckConfigUpdatesMessage message:
+                    TryAction(message.MessageId, () =>
+                    {
+                        _stdoutWriter.SendDataResponse(message.MessageId, "{ \"changes\": [] }");
                     });
                     break;
                 case FormatTextMessage message:
@@ -165,10 +174,18 @@ public class MessageProcessor
         sb.Append(@"""name"":""dprint-plugin-roslyn"",");
         sb.Append($@"""version"":""{GetAssemblyVersion()}"",");
         sb.Append(@"""configKey"":""roslyn"",");
-        sb.Append(@"""fileExtensions"":[""cs"",""vb""],");
         sb.Append(@"""helpUrl"":""https://dprint.dev/plugins/roslyn"",");
         sb.Append(@"""configSchemaUrl"":"""",");
         sb.Append(@"""updateUrl"":""https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json""");
+        sb.Append("}");
+        return sb.ToString();
+    }
+
+    private static string GetFileMatchingInfo()
+    {
+        var sb = new StringBuilder();
+        sb.Append("{");
+        sb.Append(@"""fileExtensions"":[""cs"",""vb""]");
         sb.Append("}");
         return sb.ToString();
     }
