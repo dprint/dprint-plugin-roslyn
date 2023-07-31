@@ -48,8 +48,6 @@ public abstract class Message
     {
         var messageId = reader.ReadUint();
         var kind = reader.ReadUint();
-        if (kind > 14)
-            throw new ArgumentOutOfRangeException($"Unknown message kind: {kind}");
 
         var messageKind = (MessageKind)kind;
         Message result = messageKind switch
