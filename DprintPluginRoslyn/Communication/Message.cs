@@ -14,11 +14,13 @@ public enum MessageKind
     RegisterConfig = 7,
     ReleaseConfig = 8,
     GetConfigDiagnostics = 9,
-    GetResolvedConfig = 10,
-    FormatText = 11,
-    FormatTextResponse = 12,
-    CancelFormat = 13,
-    HostFormat = 14,
+    GetFileMatchingInfo = 10,
+    GetResolvedConfig = 11,
+    CheckConfigUpdates = 12,
+    FormatText = 13,
+    FormatTextResponse = 14,
+    CancelFormat = 15,
+    HostFormat = 16,
 }
 
 public abstract class Message
@@ -46,8 +48,6 @@ public abstract class Message
     {
         var messageId = reader.ReadUint();
         var kind = reader.ReadUint();
-        if (kind > 14)
-            throw new ArgumentOutOfRangeException($"Unknown message kind: {kind}");
 
         var messageKind = (MessageKind)kind;
         Message result = messageKind switch
@@ -62,7 +62,9 @@ public abstract class Message
             MessageKind.RegisterConfig => new RegisterConfigMessage(messageId, reader.ReadUint(), reader.ReadVariableData(), reader.ReadVariableData()),
             MessageKind.ReleaseConfig => new ReleaseConfigMessage(messageId, reader.ReadUint()),
             MessageKind.GetConfigDiagnostics => new GetConfigDiagnosticsMessage(messageId, reader.ReadUint()),
+            MessageKind.GetFileMatchingInfo => new GetFileMatchingInfo(messageId, reader.ReadUint()),
             MessageKind.GetResolvedConfig => new GetResolvedConfigMessage(messageId, reader.ReadUint()),
+            MessageKind.CheckConfigUpdates => new CheckConfigUpdatesMessage(messageId, reader.ReadVariableData()),
             MessageKind.FormatText => new FormatTextMessage(messageId, reader.ReadVariableData(), reader.ReadUint(), reader.ReadUint(), reader.ReadUint(), reader.ReadVariableData(), reader.ReadVariableData()),
             MessageKind.FormatTextResponse => FormatTextResponseMessage.FromReader(messageId, reader),
             MessageKind.CancelFormat => new CancelFormatMessage(messageId, reader.ReadUint()),
@@ -226,6 +228,21 @@ public class GetConfigDiagnosticsMessage : Message
     }
 }
 
+public class GetFileMatchingInfo : Message
+{
+    public uint ConfigId { get; }
+
+    public GetFileMatchingInfo(uint messageId, uint configId) : base(messageId, MessageKind.GetFileMatchingInfo)
+    {
+        ConfigId = configId;
+    }
+
+    protected override void WriteBody(MessageWriter writer)
+    {
+        writer.WriteUint(ConfigId);
+    }
+}
+
 public class GetResolvedConfigMessage : Message
 {
     public uint ConfigId { get; }
@@ -238,6 +255,21 @@ public class GetResolvedConfigMessage : Message
     protected override void WriteBody(MessageWriter writer)
     {
         writer.WriteUint(ConfigId);
+    }
+}
+
+public class CheckConfigUpdatesMessage : Message
+{
+    public byte[] PluginConfig { get; }
+
+    public CheckConfigUpdatesMessage(uint messageId, byte[] pluginConfig) : base(messageId, MessageKind.CheckConfigUpdates)
+    {
+        PluginConfig = pluginConfig;
+    }
+
+    protected override void WriteBody(MessageWriter writer)
+    {
+        writer.WriteVariableWidth(PluginConfig);
     }
 }
 
