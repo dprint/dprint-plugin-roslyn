@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>Dprint.Plugins.Roslyn</RootNamespace>
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
