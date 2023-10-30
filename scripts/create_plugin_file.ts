@@ -1,5 +1,5 @@
 import * as path from "https://deno.land/std@0.146.0/path/mod.ts";
-import { processPlugin } from "https://raw.githubusercontent.com/dprint/automation/0.4.0/mod.ts";
+import { processPlugin } from "https://raw.githubusercontent.com/dprint/automation/0.7.0/mod.ts";
 
 const currentDirPath = path.dirname(path.fromFileUrl(import.meta.url));
 const projectFile = path.join(currentDirPath, "../DprintPluginRoslyn/DprintPluginRoslyn.csproj");
@@ -18,7 +18,9 @@ await processPlugin.createDprintOrgProcessPlugin({
     "darwin-x86_64",
     "darwin-aarch64",
     "linux-x86_64",
+    "linux-x86_64-musl",
     "linux-aarch64",
+    "linux-aarch64-musl",
     "windows-x86_64",
   ],
   isTest: Deno.args.some(a => a == "--test"),
