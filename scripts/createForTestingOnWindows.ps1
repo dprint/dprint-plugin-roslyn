@@ -7,5 +7,5 @@
 $ErrorActionPreference = "Stop"
 
 dotnet build DprintPluginRoslyn -c Release --runtime win-x64
-Compress-Archive -Force -Path DprintPluginRoslyn/bin/Release/net6.0/win-x64/* -DestinationPath dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
+Compress-Archive -Force -Path DprintPluginRoslyn/bin/Release/net7.0/win-x64/* -DestinationPath dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
 deno run --allow-read=. --allow-write=. ./scripts/create_plugin_file.ts --test
