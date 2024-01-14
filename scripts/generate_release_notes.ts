@@ -23,7 +23,6 @@ In a dprint configuration file:
    }
    \`\`\`
 2. Add a "roslyn" configuration property if desired.
-
    \`\`\`jsonc
    {
      // ...etc...
