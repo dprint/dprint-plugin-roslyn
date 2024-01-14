@@ -1,5 +1,4 @@
 {
-  "incremental": true,
   "indentWidth": 2,
   "roslyn": {
     "indentWidth": 4,
@@ -19,11 +18,11 @@
     "**/.vs"
   ],
   "plugins": [
-    "https://plugins.dprint.dev/typescript-0.85.1.wasm",
-    "https://plugins.dprint.dev/json-0.17.4.wasm",
-    "https://plugins.dprint.dev/markdown-0.15.3.wasm",
-    "https://plugins.dprint.dev/roslyn-0.14.0.json@6f6a9aee458d0c6fc2a8aba5f1638b9dca2adc1ff3e202fe4eb639a30a374127",
-    "https://plugins.dprint.dev/prettier-0.27.0.json@3557a62b4507c55a47d8cde0683195b14d13c41dda66d0f0b0e111aed107e2fe",
+    "https://plugins.dprint.dev/typescript-0.88.9.wasm",
+    "https://plugins.dprint.dev/json-0.19.1.wasm",
+    "https://plugins.dprint.dev/markdown-0.16.3.wasm",
+    "https://plugins.dprint.dev/roslyn-0.17.0.json@e234744fa209f46a86e14a1e4fba5b22dc0c3486a211c1dd0e97464437a771ab",
+    "https://plugins.dprint.dev/prettier-0.32.1.json@19aa403ef0862ba8c41164e3dc6f84c0b7a66c2b11e42726b23dd25e6302ada9",
     "https://plugins.dprint.dev/exec-0.4.4.json@c207bf9b9a4ee1f0ecb75c594f774924baf62e8e53a2ce9d873816a408cecbf7"
   ]
 }

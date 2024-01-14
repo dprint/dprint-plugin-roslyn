@@ -71,8 +71,12 @@ jobs:
         id: get_plugin_file_checksum
         run: echo "::set-output name=CHECKSUM::$(shasum -a 256 plugin.json | awk '{print $1}')"
 
+      - name: Create release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} ${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }} > ${{ github.workspace }}-CHANGELOG.txt
+
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -86,29 +90,5 @@ jobs:
             dprint-plugin-roslyn-aarch64-unknown-linux-musl.zip
             dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
             plugin.json
-          body: |
-            ## Install
-
-            In a dprint configuration file:
-
-            1. Specify the plugin url and checksum in the `"plugins"` array or run `dprint config add roslyn`.
-               ```jsonc
-               {
-                 // etc...
-                 "plugins": [
-                   "https://plugins.dprint.dev/roslyn-${{ steps.get_tag_version.outputs.TAG_VERSION }}.json@${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }}"
-                 ]
-               }
-               ```
-            2. Add a "roslyn" configuration property if desired.
-
-               ```jsonc
-               {
-                 // ...etc...
-                 "roslyn": {
-                   "csharp.indentBlock": false,
-                   "visualBasic.indentWidth": 2
-                 }
-               }
-               ```
+          body_path: ${{ github.workspace }}-CHANGELOG.txt
           draft: false
