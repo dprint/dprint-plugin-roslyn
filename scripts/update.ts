@@ -4,6 +4,9 @@
  */
 import * as path from "https://deno.land/std@0.130.0/path/mod.ts";
 import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
+import $ from "https://deno.land/x/dax@0.36.0/mod.ts";
+
+// todo: rewrite to fully use dax
 
 const rootDirPath = path.dirname(path.dirname(path.fromFileUrl(import.meta.url)));
 
@@ -22,12 +25,19 @@ if (!await hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
   Deno.exit(0);
 }
 
-console.log("Found changes. Bumping version...");
-const newVersion = await bumpMinorVersion();
+console.log("Found changes.");
 
 // run the tests
 console.log("Running tests...");
 await runCommand("dotnet test".split(" "));
+
+// commit current changes
+// todo: better message here
+await $`git add .`;
+await $`git commit -m "feat: update roslyn plugin"`;
+
+console.log("Bumping version...");
+const newVersion = await bumpMinorVersion();
 
 // release
 console.log(`Committing and publishing ${newVersion}...`);
