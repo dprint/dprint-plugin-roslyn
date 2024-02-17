@@ -189,7 +189,7 @@ mod test {
 
   async fn new_communicator() -> ProcessPluginCommunicator {
     let exe_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-      .join("../DprintPluginRoslyn/bin/Debug/net7.0/")
+      .join("../DprintPluginRoslyn/bin/Debug/net8.0/")
       .join(if cfg!(windows) { "dprint-plugin-roslyn.exe" } else { "dprint-plugin-roslyn" });
     ProcessPluginCommunicator::new(&exe_path, |err| eprintln!("{}", err)).await.unwrap()
   }
