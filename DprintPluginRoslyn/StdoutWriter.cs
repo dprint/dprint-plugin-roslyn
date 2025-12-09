@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Communication;
+using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Utils;
 using System;
 using System.Text;
@@ -78,9 +78,9 @@ public sealed class StdoutWriter : IDisposable
         SendMessage(new ErrorResponseMessage(_id.Next(), originalMessageId, Encoding.UTF8.GetBytes(text)));
     }
 
-    public void SendFormatTextResponse(uint originalMessageId, string? text)
+    public void SendFormatTextResponse(uint originalMessageId, byte[]? text)
     {
-        SendMessage(new FormatTextResponseMessage(_id.Next(), originalMessageId, text == null ? null : Encoding.UTF8.GetBytes(text)));
+        SendMessage(new FormatTextResponseMessage(_id.Next(), originalMessageId, text));
     }
 
     private void SendMessage(Message message)

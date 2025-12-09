@@ -18,11 +18,11 @@
     "**/.vs"
   ],
   "plugins": [
-    "https://plugins.dprint.dev/typescript-0.88.9.wasm",
-    "https://plugins.dprint.dev/json-0.19.1.wasm",
-    "https://plugins.dprint.dev/markdown-0.16.3.wasm",
-    "https://plugins.dprint.dev/roslyn-0.17.0.json@e234744fa209f46a86e14a1e4fba5b22dc0c3486a211c1dd0e97464437a771ab",
-    "https://plugins.dprint.dev/prettier-0.32.1.json@19aa403ef0862ba8c41164e3dc6f84c0b7a66c2b11e42726b23dd25e6302ada9",
-    "https://plugins.dprint.dev/exec-0.4.4.json@c207bf9b9a4ee1f0ecb75c594f774924baf62e8e53a2ce9d873816a408cecbf7"
+    "https://plugins.dprint.dev/typescript-0.95.13.wasm",
+    "https://plugins.dprint.dev/json-0.21.0.wasm",
+    "https://plugins.dprint.dev/markdown-0.20.0.wasm",
+    "https://plugins.dprint.dev/roslyn-0.18.0.json@9586754a7e586ccda5dba4e694c0f225aabde63720c905dd85e02453b6f5e5de",
+    "https://plugins.dprint.dev/prettier-0.62.0.json@80fefd1450bfd3f469590cc6a3f40f6ace26974f948b9602124f486036fbdfab",
+    "https://plugins.dprint.dev/exec-0.6.0.json@a054130d458f124f9b5c91484833828950723a5af3f8ff2bd1523bd47b83b364"
   ]
 }

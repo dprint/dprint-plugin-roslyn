@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Communication;
+using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Serialization;
 using Dprint.Plugins.Roslyn.Utils;
@@ -118,7 +118,6 @@ public class MessageProcessor
             var overrideConfig = _serializer.Deserialize<Dictionary<string, object>>(message.OverrideConfig);
             var formatters = _workspace.GetFormatters(message.ConfigId, overrideConfig);
             var filePath = Encoding.UTF8.GetString(message.FilePath);
-            var fileText = Encoding.UTF8.GetString(message.FileText);
             var cts = new CancellationTokenSource();
             var token = cts.Token;
             _tokens.StoreValue(message.MessageId, cts);
@@ -129,8 +128,8 @@ public class MessageProcessor
                 TryAction(message.MessageId, () =>
                 {
                     var range = GetTextSpan(message);
-                    var result = formatters.FormatCode(filePath, fileText, range, token);
-                    _stdoutWriter.SendFormatTextResponse(message.MessageId, result == fileText ? null : result);
+                    var result = formatters.FormatCode(filePath, message.FileText, range, token);
+                    _stdoutWriter.SendFormatTextResponse(message.MessageId, result);
                 });
 
                 // release the token

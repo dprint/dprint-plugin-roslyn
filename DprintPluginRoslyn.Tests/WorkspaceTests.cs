@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Configuration;
+using Dprint.Plugins.Roslyn.Configuration;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Text;
