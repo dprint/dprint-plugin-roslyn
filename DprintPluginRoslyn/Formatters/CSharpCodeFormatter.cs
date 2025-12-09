@@ -29,7 +29,7 @@ public class CSharpCodeFormatter : ICodeFormatter
         return filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
     }
 
-    public string FormatText(string text, TextSpan? range, OptionSet options, CancellationToken token)
+    public byte[] FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token)
     {
         SyntaxNode formattedNode;
 
@@ -39,7 +39,8 @@ public class CSharpCodeFormatter : ICodeFormatter
             formattedNode = Formatter.Format(root, range.Value, _workspace, options, token);
         else
             formattedNode = Formatter.Format(root, _workspace, options, token);
-        return formattedNode.WriteToString();
+        var result = formattedNode.GetText(text.Encoding, text.ChecksumAlgorithm);
+        return (result.Encoding ?? System.Text.Encoding.UTF8).GetBytes(result.ToString());
     }
 
     public void ResolveConfiguration(ConfigurationResolutionContext context)

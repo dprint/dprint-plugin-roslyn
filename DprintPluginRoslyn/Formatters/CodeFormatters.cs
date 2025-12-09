@@ -1,8 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Dprint.Plugins.Roslyn.Communication;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -19,12 +21,17 @@ public class CodeFormatters
         _options = options;
     }
 
-    public string FormatCode(string filePath, string code, TextSpan? range, CancellationToken token)
+    public byte[]? FormatCode(string filePath, byte[] code, TextSpan? range, CancellationToken token)
     {
         var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
         if (formatter is null)
             throw new Exception($"Could not find formatter for file path: {filePath}");
-        return formatter.FormatText(code, range, _options, token);
+        var sourceText = SourceText.From(
+            new MemoryStream(code),
+            encoding: null  // Let it auto-detect
+        );
+        var result = formatter.FormatText(sourceText, range, _options, token);
+        return result.SequenceEqual(code) ? null : result;
     }
 
     public Dictionary<string, object> GetResolvedConfig()
