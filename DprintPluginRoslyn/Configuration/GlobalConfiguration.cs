@@ -1,4 +1,4 @@
-﻿namespace Dprint.Plugins.Roslyn.Configuration;
+namespace Dprint.Plugins.Roslyn.Configuration;
 
 public class GlobalConfiguration
 {

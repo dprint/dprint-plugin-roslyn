@@ -3,8 +3,8 @@
  * publishes a new version of the plugin if so.
  */
 import * as path from "https://deno.land/std@0.130.0/path/mod.ts";
-import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
 import $ from "https://deno.land/x/dax@0.36.0/mod.ts";
+import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
 
 // todo: rewrite to fully use dax
 

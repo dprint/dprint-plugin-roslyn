@@ -11,15 +11,15 @@ Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as 
 
 ## Configuration
 
-Specify a "roslyn" configuration property in _dprint.json_:
+Specify a "roslyn" configuration property in _dprint.json_ if desired:
 
 ```jsonc
 {
   // etc...
   "roslyn": {
     "csharp.indentBlock": false,
-    "visualBasic.indentWidth": 2
-  }
+    "visualBasic.indentWidth": 2,
+  },
 }
 ```
 

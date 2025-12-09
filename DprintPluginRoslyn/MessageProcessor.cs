@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Communication;
+using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Serialization;
 using Dprint.Plugins.Roslyn.Utils;

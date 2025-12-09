@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using System;
 using System.Collections.Generic;

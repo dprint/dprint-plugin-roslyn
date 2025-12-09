@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Configuration;
+using Dprint.Plugins.Roslyn.Configuration;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;

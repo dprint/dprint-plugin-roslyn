@@ -1,4 +1,4 @@
-﻿using Dprint.Plugins.Roslyn.Configuration;
+using Dprint.Plugins.Roslyn.Configuration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
