@@ -6,9 +6,10 @@
     <RootNamespace>Dprint.Plugins.Roslyn</RootNamespace>
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
-    <Version>0.18.0</Version>
+    <Version>0.19.1</Version>
     <Authors>David Sherret</Authors>
     <Company>Dprint Code Formatting</Company>
+    <SatellitResourceLanguages>en</SatellitResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +21,25 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="$(OutputPath)\cs\**" />
+    <Content Remove="$(OutputPath)\de\**" />
+    <Content Remove="$(OutputPath)\es\**" />
+    <Content Remove="$(OutputPath)\fr\**" />
+    <Content Remove="$(OutputPath)\it\**" />
+    <Content Remove="$(OutputPath)\ja\**" />
+    <Content Remove="$(OutputPath)\ko\**" />
+    <Content Remove="$(OutputPath)\pl\**" />
+    <Content Remove="$(OutputPath)\pt-BR\**" />
+    <Content Remove="$(OutputPath)\ru\**" />
+    <Content Remove="$(OutputPath)\tr\**" />
+    <Content Remove="$(OutputPath)\zh-Hans\**" />
+    <Content Remove="$(OutputPath)\zh-Hant\**" />
+  </ItemGroup>
+
+  <Target Name="RemoveSatelliteAssemblies" AfterTargets="Build;Publish">
+    <RemoveDir Directories="$(OutputPath)cs;$(OutputPath)de;$(OutputPath)es;$(OutputPath)fr;$(OutputPath)it;$(OutputPath)ja;$(OutputPath)ko;$(OutputPath)pl;$(OutputPath)pt-BR;$(OutputPath)ru;$(OutputPath)tr;$(OutputPath)zh-Hans;$(OutputPath)zh-Hant" />
+  </Target>
 
 </Project>
