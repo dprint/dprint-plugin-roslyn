@@ -1,5 +1,5 @@
-import * as path from "https://deno.land/std@0.146.0/path/mod.ts";
-import { processPlugin } from "https://raw.githubusercontent.com/dprint/automation/0.7.0/mod.ts";
+import { processPlugin } from "jsr:@dprint/automation@0.10.3";
+import * as path from "jsr:@std/path@1";
 
 const currentDirPath = path.dirname(path.fromFileUrl(import.meta.url));
 const projectFile = path.join(currentDirPath, "../DprintPluginRoslyn/DprintPluginRoslyn.csproj");
