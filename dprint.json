@@ -18,11 +18,11 @@
     "**/.vs"
   ],
   "plugins": [
-    "https://plugins.dprint.dev/typescript-0.95.13.wasm",
-    "https://plugins.dprint.dev/json-0.21.0.wasm",
-    "https://plugins.dprint.dev/markdown-0.20.0.wasm",
-    "https://plugins.dprint.dev/roslyn-0.18.0.json@9586754a7e586ccda5dba4e694c0f225aabde63720c905dd85e02453b6f5e5de",
-    "https://plugins.dprint.dev/prettier-0.62.0.json@80fefd1450bfd3f469590cc6a3f40f6ace26974f948b9602124f486036fbdfab",
+    "https://plugins.dprint.dev/typescript-0.95.15.wasm",
+    "https://plugins.dprint.dev/json-0.21.3.wasm",
+    "https://plugins.dprint.dev/markdown-0.21.1.wasm",
+    "https://plugins.dprint.dev/roslyn-0.20.1.json@19d542734f015097dbed728ca7ae6a96af3a97d7dddd81a0f94b5c4f69217fa4",
+    "https://plugins.dprint.dev/prettier-0.67.0.json@7a864f83de170ad92f27df81366955606f87ea95b00d0de7263f061e72345f87",
     "https://plugins.dprint.dev/exec-0.6.0.json@a054130d458f124f9b5c91484833828950723a5af3f8ff2bd1523bd47b83b364"
   ]
 }
