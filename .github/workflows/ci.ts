@@ -62,8 +62,8 @@ workflow({
         with: { "dotnet-version": "10.0.x" },
       },
       {
-        uses: "actions/setup-node@v4",
-        with: { "node-version": "22.x", "registry-url": "https://registry.npmjs.org" },
+        uses: "actions/setup-node@v6",
+        with: { "node-version": "24.x", "registry-url": "https://registry.npmjs.org" },
       },
       {
         name: "Build (Debug)",
