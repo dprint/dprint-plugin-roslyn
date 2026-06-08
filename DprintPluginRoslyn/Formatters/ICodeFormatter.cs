@@ -10,7 +10,7 @@ public interface ICodeFormatter
 {
     string RoslynLanguageName { get; }
     bool ShouldFormat(string filePath);
-    byte[] FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token);
+    SourceText FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token);
     void ResolveConfiguration(ConfigurationResolutionContext context);
     IEnumerable<(string, object)> GetResolvedConfig(OptionSet options);
 }
