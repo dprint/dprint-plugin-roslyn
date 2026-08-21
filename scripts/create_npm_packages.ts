@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run -A
-import { getChecksum, processPlugin } from "jsr:@dprint/automation@0.11.3";
 import $ from "jsr:@david/dax@^0.47.0";
+import { getChecksum, processPlugin } from "jsr:@dprint/automation@0.11.3";
 
 const pluginName = "dprint-plugin-roslyn";
 const mainPackageName = "@dprint/roslyn";
