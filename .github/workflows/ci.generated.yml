@@ -9,7 +9,7 @@ on:
     branches:
       - main
     tags:
-      - "*"
+      - '*'
 jobs:
   build:
     name: test_release
@@ -24,10 +24,10 @@ jobs:
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
         with:
           dotnet-version: 10.0.x
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22.x
-          registry-url: "https://registry.npmjs.org"
+          node-version: 24.x
+          registry-url: 'https://registry.npmjs.org'
       - name: Build (Debug)
         run: dotnet build DprintPluginRoslyn
       - name: Test
@@ -64,19 +64,19 @@ jobs:
         run: deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts
       - name: Get tag version
         id: get_tag_version
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'echo TAG_VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT'
       - name: Build npm packages
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: deno run -A scripts/create_npm_packages.ts
       - name: Create release notes
-        if: "startsWith(github.ref, 'refs/tags/')"
-        run: "deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
+        run: 'deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt'
       - name: Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           files: |-
             dprint-plugin-roslyn-x86_64-apple-darwin.zip
@@ -87,11 +87,11 @@ jobs:
             dprint-plugin-roslyn-aarch64-unknown-linux-musl.zip
             dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
             plugin.json
-          body_path: "${{ github.workspace }}-CHANGELOG.txt"
+          body_path: '${{ github.workspace }}-CHANGELOG.txt'
           draft: false
       - name: Upgrade npm
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: npm install --global npm@latest
       - name: Publish npm packages
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: deno run -A scripts/publish_npm_packages.ts

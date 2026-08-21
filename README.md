@@ -7,7 +7,8 @@ Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as 
 ## Install
 
 1. Install [dprint](https://dprint.dev/install/)
-2. Follow instructions at https://github.com/dprint/dprint-plugin-roslyn/releases/
+1. Run `dprint init`
+1. Run `dprint add roslyn`
 
 ## Configuration
 
