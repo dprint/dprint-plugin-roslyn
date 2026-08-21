@@ -6,7 +6,7 @@
     <RootNamespace>Dprint.Plugins.Roslyn</RootNamespace>
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
-    <Version>0.20.1</Version>
+    <Version>0.22.0</Version>
     <Authors>David Sherret</Authors>
     <Company>Dprint Code Formatting</Company>
     <SatellitResourceLanguages>en</SatellitResourceLanguages>
@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.3.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="5.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="5.9.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 

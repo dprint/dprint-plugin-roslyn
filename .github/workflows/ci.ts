@@ -34,14 +34,6 @@ const getTagVersion = step({
   outputs: ["TAG_VERSION"],
 });
 
-const getPluginFileChecksum = step({
-  id: "get_plugin_file_checksum",
-  name: "Get plugin file checksum",
-  if: isTag,
-  run: `echo "CHECKSUM=$(shasum -a 256 plugin.json | awk '{print $1}')" >> $GITHUB_OUTPUT`,
-  outputs: ["CHECKSUM"],
-});
-
 workflow({
   name: "CI",
   on: {
@@ -93,10 +85,7 @@ workflow({
         run: "deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts",
       },
       getTagVersion,
-      getPluginFileChecksum,
       {
-        // must run before "Create release notes" — the notes embed the main
-        // npm tarball's sha256 from npm-dist/publish-manifest.json.
         name: "Build npm packages",
         if: isTag,
         run: "deno run -A scripts/create_npm_packages.ts",
@@ -105,7 +94,7 @@ workflow({
         name: "Create release notes",
         if: isTag,
         run:
-          `deno run -A ./scripts/generate_release_notes.ts ${getTagVersion.outputs.TAG_VERSION} ${getPluginFileChecksum.outputs.CHECKSUM} > \${{ github.workspace }}-CHANGELOG.txt`,
+          `deno run -A ./scripts/generate_release_notes.ts ${getTagVersion.outputs.TAG_VERSION} > \${{ github.workspace }}-CHANGELOG.txt`,
       },
       {
         name: "Release",

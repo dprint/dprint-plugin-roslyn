@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5
         with:
           dotnet-version: 10.0.x
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
@@ -66,16 +66,12 @@ jobs:
         id: get_tag_version
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'echo TAG_VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT'
-      - name: Get plugin file checksum
-        id: get_plugin_file_checksum
-        if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: 'echo "CHECKSUM=$(shasum -a 256 plugin.json | awk ''{print $1}'')" >> $GITHUB_OUTPUT'
       - name: Build npm packages
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: deno run -A scripts/create_npm_packages.ts
       - name: Create release notes
         if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: 'deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} ${{ steps.get_plugin_file_checksum.outputs.CHECKSUM }} > ${{ github.workspace }}-CHANGELOG.txt'
+        run: 'deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt'
       - name: Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         if: 'startsWith(github.ref, ''refs/tags/'')'

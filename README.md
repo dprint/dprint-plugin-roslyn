@@ -9,7 +9,6 @@ Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as 
 1. Install [dprint](https://dprint.dev/install/)
 1. Run `dprint init`
 1. Run `dprint add roslyn`
-   - Or install from npm: `dprint add npm:@dprint/roslyn`
 
 ## Configuration
 

@@ -1,4 +1,5 @@
 using Dprint.Plugins.Roslyn.Communication;
+using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
@@ -31,7 +32,8 @@ public class CodeFormatters
             encoding: null  // Let it auto-detect
         );
         var result = formatter.FormatText(sourceText, range, _options, token);
-        return result.SequenceEqual(code) ? null : result;
+        var bytes = result.GetBytes();
+        return bytes.SequenceEqual(code) ? null : bytes;
     }
 
     public Dictionary<string, object> GetResolvedConfig()
