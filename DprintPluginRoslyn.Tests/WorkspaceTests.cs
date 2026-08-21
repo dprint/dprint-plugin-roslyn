@@ -1,7 +1,9 @@
 using Dprint.Plugins.Roslyn.Configuration;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Dprint.Plugins.Roslyn;
 
@@ -44,5 +46,34 @@ public class WorkspaceTests
         workspace.SetConfig(2, new(), pluginConfig);
         var diagnostics = workspace.GetDiagnostics(2);
         Assert.That(diagnostics.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void FormatCode_WithBom_PreservesBomWhenContentChanges()
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new());
+        var bom = Encoding.UTF8.GetPreamble();
+        var content = Encoding.UTF8.GetBytes("namespace Test    {   }\n");
+        var input = bom.Concat(content).ToArray();
+
+        var result = workspace.GetFormatters(1).FormatCode("file.cs", input, null, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Take(3).ToArray(), Is.EqualTo(bom));
+    }
+
+    [Test]
+    public void FormatCode_WithBom_ReturnsNullWhenUnchanged()
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new());
+        var bom = Encoding.UTF8.GetPreamble();
+        var content = Encoding.UTF8.GetBytes("namespace Test { }\n");
+        var input = bom.Concat(content).ToArray();
+
+        var result = workspace.GetFormatters(1).FormatCode("file.cs", input, null, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
     }
 }

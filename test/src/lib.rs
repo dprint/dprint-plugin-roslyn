@@ -78,6 +78,34 @@ mod test {
         })
         .await;
       assert_eq!(result.unwrap(), Some("namespace Test    {\n    class Test { }\n}\n".to_string(),));
+
+      // BOM preservation: content needs formatting
+      let result = communicator
+        .format_text(ProcessPluginCommunicatorFormatRequest {
+          file_path: PathBuf::from("file.cs"),
+          file_text: "\u{FEFF}namespace Test    {   }\n".to_string(),
+          range: None,
+          config_id,
+          override_config: Default::default(),
+          on_host_format: Rc::new(|_| unreachable!()),
+          token: token.clone(),
+        })
+        .await;
+      assert_eq!(result.unwrap(), Some("\u{FEFF}namespace Test { }\n".to_string()));
+
+      // BOM preservation: already formatted, should be unchanged
+      let result = communicator
+        .format_text(ProcessPluginCommunicatorFormatRequest {
+          file_path: PathBuf::from("file.cs"),
+          file_text: "\u{FEFF}namespace Test { }\n".to_string(),
+          range: None,
+          config_id,
+          override_config: Default::default(),
+          on_host_format: Rc::new(|_| unreachable!()),
+          token: token.clone(),
+        })
+        .await;
+      assert_eq!(result.unwrap(), None);
     }
 
     let mut handles = Vec::new();
