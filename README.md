@@ -1,6 +1,6 @@
 # dprint-plugin-roslyn
 
-[![CI](https://github.com/dprint/dprint-plugin-roslyn/workflows/CI/badge.svg)](https://github.com/dprint/dprint-plugin-roslyn/actions?query=workflow%3ACI)
+[![npm version](https://img.shields.io/npm/v/@dprint/roslyn.svg)](https://www.npmjs.com/package/@dprint/roslyn) [![CI](https://github.com/dprint/dprint-plugin-roslyn/workflows/CI/badge.svg)](https://github.com/dprint/dprint-plugin-roslyn/actions?query=workflow%3ACI)
 
 Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as a dprint plugin for C# and Visual Basic code formatting.
 
