@@ -42,7 +42,7 @@ public class WorkspaceTests
     {
         var workspace = new Workspace();
         var textBytes = Encoding.UTF8.GetBytes("{\"indentWidth\": 2 }");
-        var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(textBytes);
+        var pluginConfig = Serialization.PluginJson.DeserializeConfig(textBytes);
         workspace.SetConfig(2, new(), pluginConfig);
         var diagnostics = workspace.GetDiagnostics(2);
         Assert.That(diagnostics.Count, Is.EqualTo(0));

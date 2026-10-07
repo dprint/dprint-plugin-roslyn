@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -36,7 +37,7 @@ public static class ConfigurationHelpers
         }
     }
 
-    public static void HandlePluginConfig(ConfigurationResolutionContext context, Type formattingOptionsType, string languageKeyPrefix)
+    public static void HandlePluginConfig(ConfigurationResolutionContext context, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type formattingOptionsType, string languageKeyPrefix)
     {
         foreach (var key in context.GetConfigKeys().Where(key => key.StartsWith(languageKeyPrefix)))
         {
@@ -111,7 +112,7 @@ public static class ConfigurationHelpers
         yield return ($"{configPrefix}newLine", options.GetOption(FormattingOptions.NewLine, language)!);
     }
 
-    public static IEnumerable<(string, object)> GetResolvedPluginConfig(OptionSet options, Type formattingOptionsType, string languageKeyPrefix)
+    public static IEnumerable<(string, object)> GetResolvedPluginConfig(OptionSet options, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type formattingOptionsType, string languageKeyPrefix)
     {
         foreach (var prop in formattingOptionsType.GetProperties(BindingFlags.Public | BindingFlags.Static))
         {

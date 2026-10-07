@@ -1,15 +1,30 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Dprint.Plugins.Roslyn</RootNamespace>
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Version>0.22.1</Version>
     <Authors>David Sherret</Authors>
     <Company>Dprint Code Formatting</Company>
-    <SatellitResourceLanguages>en</SatellitResourceLanguages>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcLlvmVersion>10.0.0-rc.1.26357.1</IlcLlvmVersion>
+  </PropertyGroup>
+
+  <!-- Compiles to a Wasm module with NativeAOT-LLVM when publishing with `-r wasi-wasm` -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <NativeLib>Shared</NativeLib>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <UseAppHost>false</UseAppHost>
+    <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
+    <!-- link a core Wasm module instead of a component because dprint calls the module's exports directly -->
+    <LinkerFlavor>lld</LinkerFlavor>
+    <!-- Roslyn produces many trim warnings for code that the plugin doesn't use -->
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,27 +34,25 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="5.9.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="$(IlcLlvmVersion)" />
+    <PackageReference Include="runtime.$(NETCoreSdkPortableRuntimeIdentifier).Microsoft.DotNet.ILCompiler.LLVM" Version="$(IlcLlvmVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="$(OutputPath)\cs\**" />
-    <Content Remove="$(OutputPath)\de\**" />
-    <Content Remove="$(OutputPath)\es\**" />
-    <Content Remove="$(OutputPath)\fr\**" />
-    <Content Remove="$(OutputPath)\it\**" />
-    <Content Remove="$(OutputPath)\ja\**" />
-    <Content Remove="$(OutputPath)\ko\**" />
-    <Content Remove="$(OutputPath)\pl\**" />
-    <Content Remove="$(OutputPath)\pt-BR\**" />
-    <Content Remove="$(OutputPath)\ru\**" />
-    <Content Remove="$(OutputPath)\tr\**" />
-    <Content Remove="$(OutputPath)\zh-Hans\**" />
-    <Content Remove="$(OutputPath)\zh-Hant\**" />
+    <!-- Roslyn's formatting engine is internal and its public API requires a workspace,
+         whose services are discovered with reflection that doesn't work after trimming -->
+    <Publicize Include="Microsoft.CodeAnalysis.Workspaces;Microsoft.CodeAnalysis.CSharp.Workspaces;Microsoft.CodeAnalysis.VisualBasic.Workspaces" />
   </ItemGroup>
 
-  <Target Name="RemoveSatelliteAssemblies" AfterTargets="Build;Publish">
-    <RemoveDir Directories="$(OutputPath)cs;$(OutputPath)de;$(OutputPath)es;$(OutputPath)fr;$(OutputPath)it;$(OutputPath)ja;$(OutputPath)ko;$(OutputPath)pl;$(OutputPath)pt-BR;$(OutputPath)ru;$(OutputPath)tr;$(OutputPath)zh-Hans;$(OutputPath)zh-Hant" />
+  <!-- The compiler targets WASI preview 2 by default, but dprint provides preview 1 -->
+  <Target Name="UseWasiPreview1" BeforeTargets="SetupProperties" Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <PropertyGroup>
+      <IlcLlvmTarget>wasm32-wasip1</IlcLlvmTarget>
+    </PropertyGroup>
   </Target>
 
 </Project>

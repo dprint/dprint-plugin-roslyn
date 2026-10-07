@@ -1,12 +1,10 @@
-using Dprint.Plugins.Roslyn.Communication;
 using Dprint.Plugins.Roslyn.Utils;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace Dprint.Plugins.Roslyn.Formatters;
@@ -22,18 +20,32 @@ public class CodeFormatters
         _options = options;
     }
 
-    public byte[]? FormatCode(string filePath, byte[] code, TextSpan? range, CancellationToken token)
+    public byte[]? FormatCode(string filePath, byte[] code, (int Start, int End)? byteRange, CancellationToken token)
     {
         var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
         if (formatter is null)
             throw new Exception($"Could not find formatter for file path: {filePath}");
-        var sourceText = SourceText.From(
-            new MemoryStream(code),
-            encoding: null  // Let it auto-detect
-        );
-        var result = formatter.FormatText(sourceText, range, _options, token);
+        // Don't create the source text from the bytes because that computes a checksum
+        // using System.Security.Cryptography, which isn't supported in Wasm.
+        var encoding = DetectEncoding(code);
+        var preambleLength = encoding.Preamble.Length;
+        var sourceText = SourceText.From(encoding.GetString(code, preambleLength, code.Length - preambleLength), encoding);
+        var result = formatter.FormatText(sourceText, GetTextSpan(byteRange), _options, token);
         var bytes = result.GetBytes();
         return bytes.SequenceEqual(code) ? null : bytes;
+
+        TextSpan? GetTextSpan((int Start, int End)? byteRange)
+        {
+            if (byteRange is not { } range || range.Start == 0 && range.End == code.Length)
+                return null;
+            return TextSpan.FromBounds(ByteToCharIndex(range.Start), ByteToCharIndex(range.End));
+        }
+
+        int ByteToCharIndex(int byteIndex)
+        {
+            var index = Math.Clamp(byteIndex, preambleLength, code.Length);
+            return encoding.GetCharCount(code, preambleLength, index - preambleLength);
+        }
     }
 
     public Dictionary<string, object> GetResolvedConfig()
@@ -46,5 +58,20 @@ public class CodeFormatters
         }
 
         return config;
+    }
+
+    /// <summary>
+    /// Gets the encoding based on the byte order mark, defaulting to UTF-8.
+    /// </summary>
+    private static Encoding DetectEncoding(byte[] code)
+    {
+        Encoding[] encodingsWithPreamble =
+        [
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true, throwOnInvalidBytes: true),
+            new UnicodeEncoding(bigEndian: false, byteOrderMark: true, throwOnInvalidBytes: true),
+            new UnicodeEncoding(bigEndian: true, byteOrderMark: true, throwOnInvalidBytes: true),
+        ];
+        return encodingsWithPreamble.FirstOrDefault(encoding => code.AsSpan().StartsWith(encoding.Preamble))
+            ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
     }
 }

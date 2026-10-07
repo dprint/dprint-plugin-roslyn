@@ -1,4 +1,5 @@
 ﻿.vs
 bin
 obj
-test/target
+plugin.wasm
+npm-dist

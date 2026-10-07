@@ -1,30 +1,11 @@
 #!/usr/bin/env -S deno run -A
 import { conditions, step, workflow } from "jsr:@david/gagen@^0.5.0";
 
-const pluginName = "dprint-plugin-roslyn";
-
-interface Profile {
-  /** dprint platform identifier */
-  platform: string;
-  /** dotnet --runtime value */
-  dotnetRuntime: string;
-  /** rust target triple used in the zip name */
-  target: string;
-}
-
-const profiles: Profile[] = [
-  { platform: "darwin-x86_64", dotnetRuntime: "osx-x64", target: "x86_64-apple-darwin" },
-  { platform: "darwin-aarch64", dotnetRuntime: "osx-arm64", target: "aarch64-apple-darwin" },
-  { platform: "linux-x86_64", dotnetRuntime: "linux-x64", target: "x86_64-unknown-linux-gnu" },
-  { platform: "linux-x86_64-musl", dotnetRuntime: "linux-musl-x64", target: "x86_64-unknown-linux-musl" },
-  { platform: "linux-aarch64", dotnetRuntime: "linux-arm64", target: "aarch64-unknown-linux-gnu" },
-  { platform: "linux-aarch64-musl", dotnetRuntime: "linux-musl-arm64", target: "aarch64-unknown-linux-musl" },
-  { platform: "windows-x86_64", dotnetRuntime: "win-x64", target: "x86_64-pc-windows-msvc" },
-];
+const wasiSdkVersion = "29";
+const wasiSdkDir = `wasi-sdk-${wasiSdkVersion}.0-x86_64-linux`;
+const wasmPath = "DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm";
 
 const isTag = conditions.isTag();
-
-const zipFor = (p: Profile) => `${pluginName}-${p.target}.zip`;
 
 const getTagVersion = step({
   id: "get_tag_version",
@@ -43,7 +24,8 @@ workflow({
   jobs: [{
     id: "build",
     name: "test_release",
-    runsOn: "macos-14",
+    // the NativeAOT-LLVM compiler is only published for Linux and Windows hosts
+    runsOn: "ubuntu-latest",
     // id-token: write is required for npm --provenance
     permissions: { contents: "write", "id-token": "write" },
     steps: [
@@ -57,38 +39,39 @@ workflow({
         uses: "actions/setup-node@v6",
         with: { "node-version": "24.x", "registry-url": "https://registry.npmjs.org" },
       },
-      {
-        name: "Build (Debug)",
-        run: "dotnet build DprintPluginRoslyn",
-      },
       { name: "Test", run: "dotnet test" },
-      { name: "Test Exe", run: "cd test && cargo test" },
       {
-        name: "Build (Release)",
-        run: profiles.map((p) =>
-          `dotnet build DprintPluginRoslyn -c Release --self-contained --runtime ${p.dotnetRuntime}`
-        ),
-      },
-      {
-        name: "Package",
-        // cd into each output directory so we only include its files
+        name: "Install WASI SDK",
         run: [
-          "RELEASE_DIR=$GITHUB_WORKSPACE/DprintPluginRoslyn/bin/Release/net10.0",
-          ...profiles.flatMap((p) => [
-            `cd $RELEASE_DIR/${p.dotnetRuntime}`,
-            `zip -r ../../../../../${zipFor(p)} ./*`,
-          ]),
+          `curl -sSfL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${wasiSdkVersion}/${wasiSdkDir}.tar.gz | tar xz -C "$RUNNER_TEMP"`,
+          `echo "WASI_SDK_PATH=$RUNNER_TEMP/${wasiSdkDir}" >> "$GITHUB_ENV"`,
         ],
       },
       {
-        name: "Create plugin file",
-        run: "deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts",
+        name: "Build Wasm",
+        run: [
+          "dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm",
+          `cp ${wasmPath} plugin.wasm`,
+        ],
+      },
+      {
+        // requires a version of dprint that provides the WASI imports to Wasm plugins
+        name: "Install dprint",
+        run: [
+          "curl -fsSL https://dprint.dev/install.sh | sh",
+          `echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"`,
+        ],
+      },
+      {
+        name: "Test Wasm",
+        env: { DPRINT_ROSLYN_WASM_PATH: "${{ github.workspace }}/plugin.wasm" },
+        run: "dotnet test --filter TestCategory=Wasm",
       },
       getTagVersion,
       {
-        name: "Build npm packages",
+        name: "Build npm package",
         if: isTag,
-        run: "deno run -A scripts/create_npm_packages.ts",
+        run: "deno run -A scripts/create_npm_package.ts",
       },
       {
         name: "Create release notes",
@@ -102,7 +85,7 @@ workflow({
         uses: "softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844",
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
         with: {
-          files: [...profiles.map(zipFor), "plugin.json"].join("\n"),
+          files: "plugin.wasm",
           body_path: "${{ github.workspace }}-CHANGELOG.txt",
           draft: false,
         },
@@ -114,9 +97,9 @@ workflow({
         run: "npm install --global npm@latest",
       },
       {
-        name: "Publish npm packages",
+        name: "Publish npm package",
         if: isTag,
-        run: "deno run -A scripts/publish_npm_packages.ts",
+        run: "npm publish --access public --provenance npm-dist",
       },
     ],
   }],
