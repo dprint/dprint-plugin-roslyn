@@ -84,6 +84,18 @@ public class WasmPluginTests
     }
 
     [Test]
+    public void Fmt_NoNewLineKind_UsesLineEndingsOfFile()
+    {
+        using var dir = CreateDirectory("");
+        dir.WriteFile("crlf.cs", "class Test\r\n{\r\n    void Method()\r\n    {\r\n        if (true) {\r\n        }\r\n    }\r\n}\r\n");
+        dir.WriteFile("lf.cs", "class Test\n{\n    void Method()\n    {\n        if (true) {\n        }\n    }\n}\n");
+
+        Assert.That(dir.Run("fmt").ExitCode, Is.Zero);
+        Assert.That(dir.ReadFile("crlf.cs"), Is.EqualTo("class Test\r\n{\r\n    void Method()\r\n    {\r\n        if (true)\r\n        {\r\n        }\r\n    }\r\n}\r\n"));
+        Assert.That(dir.ReadFile("lf.cs"), Is.EqualTo("class Test\n{\n    void Method()\n    {\n        if (true)\n        {\n        }\n    }\n}\n"));
+    }
+
+    [Test]
     public void Fmt_ConfigDiagnostics_Errors()
     {
         using var dir = CreateDirectory("""

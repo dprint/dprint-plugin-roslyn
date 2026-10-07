@@ -86,6 +86,9 @@ public class Workspace
         var context = new ConfigurationResolutionContext(pluginConfig, new PluginOptionSet());
         var languages = formatters.Select(f => f.RoslynLanguageName).ToList();
 
+        // Roslyn defaults to the new line of the system, which is always "\n" in Wasm
+        context.ChangeOption(FormattingOptions.NewLine, languages, ConfigurationHelpers.AutoNewLine);
+
         if (globalConfig.IndentWidth.HasValue)
         {
             context.ChangeOption(FormattingOptions.IndentationSize, languages, globalConfig.IndentWidth.Value);

@@ -1,4 +1,6 @@
+using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Utils;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using System;
@@ -29,8 +31,9 @@ public class CodeFormatters
         // using System.Security.Cryptography, which isn't supported in Wasm.
         var encoding = DetectEncoding(code);
         var preambleLength = encoding.Preamble.Length;
-        var sourceText = SourceText.From(encoding.GetString(code, preambleLength, code.Length - preambleLength), encoding);
-        var result = formatter.FormatText(sourceText, GetTextSpan(byteRange), _options, token);
+        var text = encoding.GetString(code, preambleLength, code.Length - preambleLength);
+        var sourceText = SourceText.From(text, encoding);
+        var result = formatter.FormatText(sourceText, GetTextSpan(byteRange), GetOptionsForText(formatter, text), token);
         var bytes = result.GetBytes();
         return bytes.SequenceEqual(code) ? null : bytes;
 
@@ -58,6 +61,26 @@ public class CodeFormatters
         }
 
         return config;
+    }
+
+    /// <summary>
+    /// Gets the options with an "auto" new line resolved to the line endings of the text.
+    /// </summary>
+    private OptionSet GetOptionsForText(ICodeFormatter formatter, string text)
+    {
+        var language = formatter.RoslynLanguageName;
+        if (_options.GetOption(FormattingOptions.NewLine, language) != ConfigurationHelpers.AutoNewLine)
+            return _options;
+        return _options.WithChangedOption(FormattingOptions.NewLine, language, DetectNewLine(text));
+    }
+
+    /// <summary>
+    /// Gets the last line ending in the text, defaulting to a line feed.
+    /// </summary>
+    private static string DetectNewLine(string text)
+    {
+        var index = text.LastIndexOf('\n');
+        return index > 0 && text[index - 1] == '\r' ? "\r\n" : "\n";
     }
 
     /// <summary>

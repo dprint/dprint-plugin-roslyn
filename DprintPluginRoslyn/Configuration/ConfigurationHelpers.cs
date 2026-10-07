@@ -10,6 +10,11 @@ namespace Dprint.Plugins.Roslyn.Configuration;
 
 public static class ConfigurationHelpers
 {
+    /// <summary>
+    /// Value of the new line option that means to use the line endings of the file being formatted.
+    /// </summary>
+    public const string AutoNewLine = "auto";
+
     public static void HandleGlobalConfig(ConfigurationResolutionContext context, string configPrefix, string language)
     {
         HandleGlobalConfig(context, configPrefix, new[] { language });
@@ -134,8 +139,9 @@ public static class ConfigurationHelpers
             case "lf":
                 return "\n";
             case "crlf":
-            case "auto": // todo: do this on a per file basis
                 return "\r\n";
+            case "auto":
+                return AutoNewLine;
             case "system":
                 return Environment.NewLine;
             default:
