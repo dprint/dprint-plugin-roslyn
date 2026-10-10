@@ -23,7 +23,7 @@ public static class PluginJson
             writer.WriteString("version", version);
             writer.WriteString("configKey", "roslyn");
             writer.WriteString("helpUrl", "https://dprint.dev/plugins/roslyn");
-            writer.WriteString("configSchemaUrl", "");
+            writer.WriteString("configSchemaUrl", $"https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/{version}/schema.json");
             writer.WriteString("updateUrl", "https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json");
             writer.WriteEndObject();
         });

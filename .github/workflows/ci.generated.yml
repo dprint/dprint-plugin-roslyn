@@ -28,41 +28,54 @@ jobs:
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
+      - name: Lint workflow generation
+        run: |-
+          ./.github/workflows/ci.ts --lint
+          ./.github/workflows/check_updates.ts --lint
+          ./.github/workflows/release.ts --lint
       - name: Test
         run: dotnet test
       - name: Install WASI SDK
         run: |-
           curl -sSfL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz | tar xz -C "$RUNNER_TEMP"
           echo "WASI_SDK_PATH=$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" >> "$GITHUB_ENV"
-      - name: Build Wasm
-        run: |-
-          dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm
-          cp DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm plugin.wasm
       - name: Install dprint
         run: |-
           curl -fsSL https://dprint.dev/install.sh | sh
           echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"
+      - name: Build Wasm
+        run: dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm
       - name: Test Wasm
         env:
-          DPRINT_ROSLYN_WASM_PATH: '${{ github.workspace }}/plugin.wasm'
+          DPRINT_ROSLYN_WASM_PATH: '${{ github.workspace }}/DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm'
         run: dotnet test --filter TestCategory=Wasm
+      - name: Setup and test npm deployment
+        run: |-
+          cd deployment/npm
+          node setup.js
+          npm run test
       - name: Get tag version
         id: get_tag_version
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'echo TAG_VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT'
-      - name: Build npm package
+      - name: Pre-release
         if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: deno run -A scripts/create_npm_package.ts
-      - name: Create release notes
-        if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: 'deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt'
+        run: |-
+          # update config schema to have version
+          sed -i 's/roslyn\/0.0.0/roslyn\/${{ steps.get_tag_version.outputs.TAG_VERSION }}/' deployment/schema.json
+          # update the npm package to have version
+          (cd deployment/npm && node setup.js sync-version)
+          # create release notes
+          deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt
       - name: Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         if: 'startsWith(github.ref, ''refs/tags/'')'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          files: plugin.wasm
+          files: |-
+            deployment/npm/plugin.wasm
+            deployment/schema.json
           body_path: '${{ github.workspace }}-CHANGELOG.txt'
           draft: false
       - name: Upgrade npm
@@ -70,4 +83,4 @@ jobs:
         run: npm install --global npm@latest
       - name: Publish npm package
         if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: npm publish --access public --provenance npm-dist
+        run: npm publish --access public --provenance deployment/npm

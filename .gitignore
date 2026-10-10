@@ -2,4 +2,4 @@
 bin
 obj
 plugin.wasm
-npm-dist
+deployment/npm/LICENSE

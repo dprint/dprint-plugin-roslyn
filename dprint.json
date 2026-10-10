@@ -4,25 +4,18 @@
     "indentWidth": 4,
     "newLineKind": "crlf"
   },
-  "exec": {
-    "commands": [{
-      "command": "rustfmt --config imports_granularity=item --edition 2021",
-      "exts": ["rs"]
-    }]
-  },
   "excludes": [
     "**/*-lock.json",
     "**/obj",
     "**/bin",
-    "**/target",
-    "**/.vs"
+    "**/.vs",
+    "deployment/schema.json"
   ],
   "plugins": [
     "npm:@dprint/typescript@0.96.1",
     "npm:@dprint/json@0.23.0",
     "npm:@dprint/markdown@0.22.1",
     "npm:@dprint/roslyn@0.22.0/plugin.json@ff539da3693d6827fb8a9482241f71588318ad3d7d750a507547a738abf15402",
-    "npm:@dprint/prettier@0.70.0/plugin.json@97c0dccf54ed5b7343e7a3f6418e77bd80afcd2b74beed3a632689d47e392ddc",
-    "npm:@dprint/exec@0.7.3/plugin.json@704701df449dd7e942a71144773778ac529d68c2e4657bfc236d393b898b9a67"
+    "npm:@dprint/prettier@0.70.0/plugin.json@97c0dccf54ed5b7343e7a3f6418e77bd80afcd2b74beed3a632689d47e392ddc"
   ]
 }
