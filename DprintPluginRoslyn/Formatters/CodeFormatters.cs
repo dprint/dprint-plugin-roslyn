@@ -1,5 +1,4 @@
 using Dprint.Plugins.Roslyn.Configuration;
-using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
@@ -36,13 +35,13 @@ public class CodeFormatters
         var textSpan = GetTextSpan(byteRange);
         var newLine = GetNewLine(formatter, text);
         var options = _options.WithChangedOption(FormattingOptions.NewLine, formatter.RoslynLanguageName, newLine);
-        var result = formatter.FormatText(sourceText, textSpan, options, token);
+        var result = formatter.FormatText(sourceText, textSpan, options, token).ToString();
         // Roslyn only uses the new line for the ones it inserts, so the rest need to be
         // changed here. Leave them alone when formatting a range to not change text outside it.
         if (textSpan is null)
-            result = SourceText.From(NormalizeNewLines(result.ToString(), newLine), encoding);
-        var bytes = result.GetBytes();
-        return bytes.SequenceEqual(code) ? null : bytes;
+            result = NormalizeNewLines(result, newLine);
+        var bytes = GetBytes(result, encoding);
+        return bytes.AsSpan().SequenceEqual(code) ? null : bytes;
 
         TextSpan? GetTextSpan((int Start, int End)? byteRange)
         {
@@ -93,8 +92,31 @@ public class CodeFormatters
     /// </summary>
     private static string NormalizeNewLines(string text, string newLine)
     {
-        var normalized = text.Replace("\r\n", "\n");
-        return newLine == "\n" ? normalized : normalized.Replace("\n", newLine);
+        // most files only have the new line, so only allocate once a different one is found
+        StringBuilder? builder = null;
+        var copiedEnd = 0;
+        var index = 0;
+        while ((index = text.IndexOf('\n', index)) >= 0)
+        {
+            var start = index > 0 && text[index - 1] == '\r' ? index - 1 : index;
+            index++;
+            if (text.AsSpan(start, index - start).SequenceEqual(newLine))
+                continue;
+            builder ??= new StringBuilder(text.Length + 16);
+            builder.Append(text, copiedEnd, start - copiedEnd).Append(newLine);
+            copiedEnd = index;
+        }
+
+        return builder is null ? text : builder.Append(text, copiedEnd, text.Length - copiedEnd).ToString();
+    }
+
+    private static byte[] GetBytes(string text, Encoding encoding)
+    {
+        var preamble = encoding.Preamble;
+        var bytes = new byte[preamble.Length + encoding.GetByteCount(text)];
+        preamble.CopyTo(bytes);
+        encoding.GetBytes(text, 0, text.Length, bytes, preamble.Length);
+        return bytes;
     }
 
     /// <summary>
