@@ -1,5 +1,4 @@
 using Dprint.Plugins.Roslyn.Configuration;
-using Dprint.Plugins.Roslyn.Utils;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
@@ -33,9 +32,16 @@ public class CodeFormatters
         var preambleLength = encoding.Preamble.Length;
         var text = encoding.GetString(code, preambleLength, code.Length - preambleLength);
         var sourceText = SourceText.From(text, encoding);
-        var result = formatter.FormatText(sourceText, GetTextSpan(byteRange), GetOptionsForText(formatter, text), token);
-        var bytes = result.GetBytes();
-        return bytes.SequenceEqual(code) ? null : bytes;
+        var textSpan = GetTextSpan(byteRange);
+        var newLine = GetNewLine(formatter, text);
+        var options = _options.WithChangedOption(FormattingOptions.NewLine, formatter.RoslynLanguageName, newLine);
+        var result = formatter.FormatText(sourceText, textSpan, options, token).ToString();
+        // Roslyn only uses the new line for the ones it inserts, so the rest need to be
+        // changed here. Leave them alone when formatting a range to not change text outside it.
+        if (textSpan is null)
+            result = NormalizeNewLines(result, newLine);
+        var bytes = GetBytes(result, encoding);
+        return bytes.AsSpan().SequenceEqual(code) ? null : bytes;
 
         TextSpan? GetTextSpan((int Start, int End)? byteRange)
         {
@@ -64,14 +70,12 @@ public class CodeFormatters
     }
 
     /// <summary>
-    /// Gets the options with an "auto" new line resolved to the line endings of the text.
+    /// Gets the configured new line with "auto" resolved to the line endings of the text.
     /// </summary>
-    private OptionSet GetOptionsForText(ICodeFormatter formatter, string text)
+    private string GetNewLine(ICodeFormatter formatter, string text)
     {
-        var language = formatter.RoslynLanguageName;
-        if (_options.GetOption(FormattingOptions.NewLine, language) != ConfigurationHelpers.AutoNewLine)
-            return _options;
-        return _options.WithChangedOption(FormattingOptions.NewLine, language, DetectNewLine(text));
+        var newLine = _options.GetOption(FormattingOptions.NewLine, formatter.RoslynLanguageName);
+        return newLine == ConfigurationHelpers.AutoNewLine ? DetectNewLine(text) : newLine;
     }
 
     /// <summary>
@@ -81,6 +85,38 @@ public class CodeFormatters
     {
         var index = text.LastIndexOf('\n');
         return index > 0 && text[index - 1] == '\r' ? "\r\n" : "\n";
+    }
+
+    /// <summary>
+    /// Changes every line ending in the text to the new line.
+    /// </summary>
+    private static string NormalizeNewLines(string text, string newLine)
+    {
+        // most files only have the new line, so only allocate once a different one is found
+        StringBuilder? builder = null;
+        var copiedEnd = 0;
+        var index = 0;
+        while ((index = text.IndexOf('\n', index)) >= 0)
+        {
+            var start = index > 0 && text[index - 1] == '\r' ? index - 1 : index;
+            index++;
+            if (text.AsSpan(start, index - start).SequenceEqual(newLine))
+                continue;
+            builder ??= new StringBuilder(text.Length + 16);
+            builder.Append(text, copiedEnd, start - copiedEnd).Append(newLine);
+            copiedEnd = index;
+        }
+
+        return builder is null ? text : builder.Append(text, copiedEnd, text.Length - copiedEnd).ToString();
+    }
+
+    private static byte[] GetBytes(string text, Encoding encoding)
+    {
+        var preamble = encoding.Preamble;
+        var bytes = new byte[preamble.Length + encoding.GetByteCount(text)];
+        preamble.CopyTo(bytes);
+        encoding.GetBytes(text, 0, text.Length, bytes, preamble.Length);
+        return bytes;
     }
 
     /// <summary>
