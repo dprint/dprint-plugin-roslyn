@@ -33,7 +33,14 @@ public class CodeFormatters
         var preambleLength = encoding.Preamble.Length;
         var text = encoding.GetString(code, preambleLength, code.Length - preambleLength);
         var sourceText = SourceText.From(text, encoding);
-        var result = formatter.FormatText(sourceText, GetTextSpan(byteRange), GetOptionsForText(formatter, text), token);
+        var textSpan = GetTextSpan(byteRange);
+        var newLine = GetNewLine(formatter, text);
+        var options = _options.WithChangedOption(FormattingOptions.NewLine, formatter.RoslynLanguageName, newLine);
+        var result = formatter.FormatText(sourceText, textSpan, options, token);
+        // Roslyn only uses the new line for the ones it inserts, so the rest need to be
+        // changed here. Leave them alone when formatting a range to not change text outside it.
+        if (textSpan is null)
+            result = SourceText.From(NormalizeNewLines(result.ToString(), newLine), encoding);
         var bytes = result.GetBytes();
         return bytes.SequenceEqual(code) ? null : bytes;
 
@@ -64,14 +71,12 @@ public class CodeFormatters
     }
 
     /// <summary>
-    /// Gets the options with an "auto" new line resolved to the line endings of the text.
+    /// Gets the configured new line with "auto" resolved to the line endings of the text.
     /// </summary>
-    private OptionSet GetOptionsForText(ICodeFormatter formatter, string text)
+    private string GetNewLine(ICodeFormatter formatter, string text)
     {
-        var language = formatter.RoslynLanguageName;
-        if (_options.GetOption(FormattingOptions.NewLine, language) != ConfigurationHelpers.AutoNewLine)
-            return _options;
-        return _options.WithChangedOption(FormattingOptions.NewLine, language, DetectNewLine(text));
+        var newLine = _options.GetOption(FormattingOptions.NewLine, formatter.RoslynLanguageName);
+        return newLine == ConfigurationHelpers.AutoNewLine ? DetectNewLine(text) : newLine;
     }
 
     /// <summary>
@@ -81,6 +86,15 @@ public class CodeFormatters
     {
         var index = text.LastIndexOf('\n');
         return index > 0 && text[index - 1] == '\r' ? "\r\n" : "\n";
+    }
+
+    /// <summary>
+    /// Changes every line ending in the text to the new line.
+    /// </summary>
+    private static string NormalizeNewLines(string text, string newLine)
+    {
+        var normalized = text.Replace("\r\n", "\n");
+        return newLine == "\n" ? normalized : normalized.Replace("\n", newLine);
     }
 
     /// <summary>

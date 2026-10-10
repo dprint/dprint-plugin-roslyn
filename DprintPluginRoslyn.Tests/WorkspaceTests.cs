@@ -52,14 +52,44 @@ public class WorkspaceTests
 
     [TestCase("lf", "\n")]
     [TestCase("crlf", "\r\n")]
-    public void FormatCode_NewLineKind_UsesItForNewLines(string newLineKind, string expectedNewLine)
+    public void FormatCode_NewLineKind_UsesItForAllLines(string newLineKind, string expectedNewLine)
     {
         var workspace = new Workspace();
         workspace.SetConfig(1, new(), new() { { "newLineKind", newLineKind } });
 
-        var result = FormatIfStatement(workspace, "\n");
+        foreach (var fileNewLine in new[] { "\n", "\r\n" })
+        {
+            var result = FormatIfStatement(workspace, fileNewLine);
 
-        Assert.That(result, Is.EqualTo(GetExpectedIfStatement("\n", expectedNewLine)));
+            Assert.That(result, Is.EqualTo(GetExpectedIfStatement(expectedNewLine, expectedNewLine)));
+        }
+    }
+
+    [TestCase("class A\n{\r\n}\r\n", "class A\r\n{\r\n}\r\n")]
+    [TestCase("class A\r\n{\r\n}\n", "class A\n{\n}\n")]
+    public void FormatCode_MixedLineEndings_UsesLastLineEndingOfFile(string input, string expected)
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new());
+
+        var result = workspace.GetFormatters(1).FormatCode("file.cs", Encoding.UTF8.GetBytes(input), null, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(Encoding.UTF8.GetString(result!), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void FormatCode_Range_KeepsLineEndingsOutsideRange()
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new() { { "newLineKind", "crlf" } });
+        var input = "class A\n{\n    void M()\n    {\n        if (true) {\n        }\n    }\n}\n";
+        var range = (input.IndexOf("if"), input.IndexOf("if") + "if (true) {".Length);
+
+        var result = workspace.GetFormatters(1).FormatCode("file.cs", Encoding.UTF8.GetBytes(input), range, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(Encoding.UTF8.GetString(result!), Is.EqualTo("class A\n{\n    void M()\n    {\n        if (true)\r\n        {\n        }\n    }\n}\n"));
     }
 
     [Test]

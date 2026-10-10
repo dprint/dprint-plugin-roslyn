@@ -96,6 +96,21 @@ public class WasmPluginTests
     }
 
     [Test]
+    public void Fmt_NewLineKind_ChangesAllLineEndings()
+    {
+        using var dir = CreateDirectory("""
+            "newLineKind": "crlf"
+            """);
+        dir.WriteFile("file.cs", "class Test\n{\n    void Method()\n    {\n        if (true) {\n        }\n    }\n}\n");
+        dir.WriteFile("file.vb", "Namespace Test\nClass A\nEnd Class\nEnd Namespace\n");
+
+        Assert.That(dir.Run("fmt").ExitCode, Is.Zero);
+        Assert.That(dir.ReadFile("file.cs"), Is.EqualTo("class Test\r\n{\r\n    void Method()\r\n    {\r\n        if (true)\r\n        {\r\n        }\r\n    }\r\n}\r\n"));
+        Assert.That(dir.ReadFile("file.vb"), Is.EqualTo("Namespace Test\r\n    Class A\r\n    End Class\r\nEnd Namespace\r\n"));
+        Assert.That(dir.Run("check").ExitCode, Is.Zero);
+    }
+
+    [Test]
     public void Fmt_ConfigDiagnostics_Errors()
     {
         using var dir = CreateDirectory("""
