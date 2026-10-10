@@ -2,7 +2,6 @@ using Dprint.Plugins.Roslyn.Configuration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Formatting;
-using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using System;
@@ -14,13 +13,7 @@ namespace Dprint.Plugins.Roslyn.Formatters;
 
 public class CSharpCodeFormatter : ICodeFormatter
 {
-    private readonly AdhocWorkspace _workspace;
     private readonly string _languageKeyPrefix = "csharp.";
-
-    public CSharpCodeFormatter(AdhocWorkspace workspace)
-    {
-        _workspace = workspace;
-    }
 
     public string RoslynLanguageName => LanguageNames.CSharp;
 
@@ -31,15 +24,9 @@ public class CSharpCodeFormatter : ICodeFormatter
 
     public SourceText FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token)
     {
-        SyntaxNode formattedNode;
-
         var syntaxTree = CSharpSyntaxTree.ParseText(text);
         var root = syntaxTree.GetCompilationUnitRoot();
-        if (range.HasValue)
-            formattedNode = Formatter.Format(root, range.Value, _workspace, options, token);
-        else
-            formattedNode = Formatter.Format(root, _workspace, options, token);
-
+        var formattedNode = SyntaxFormatter.Format(CSharpSyntaxFormatting.Instance, root, range, options, token);
         return formattedNode.GetText(text.Encoding, text.ChecksumAlgorithm);
     }
 

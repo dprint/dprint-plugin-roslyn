@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Formatting;
 using NUnit.Framework;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ public class ConfigurationHelperTests
             { "csharp.indentBlock", true },
             { "csharp.labelPositioning", "noIndent" },
         };
-        var context = new ConfigurationResolutionContext(pluginConfig, new AdhocWorkspace().Options);
+        var context = new ConfigurationResolutionContext(pluginConfig, new PluginOptionSet());
         ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), "csharp.");
         var options = context.GetOptions();
 
@@ -35,7 +34,7 @@ public class ConfigurationHelperTests
             { "csharp.labelPositioning", "testing" },
             { "csharp.unknown", true }
         };
-        var context = new ConfigurationResolutionContext(pluginConfig, new AdhocWorkspace().Options);
+        var context = new ConfigurationResolutionContext(pluginConfig, new PluginOptionSet());
         ConfigurationHelpers.HandlePluginConfig(context, typeof(CSharpFormattingOptions), "csharp.");
         var diagnostics = context.GetDiagnostics().ToList();
         Assert.That(diagnostics.Count, Is.EqualTo(3));

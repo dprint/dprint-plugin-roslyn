@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     name: test_release
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
@@ -28,47 +28,31 @@ jobs:
         with:
           node-version: 24.x
           registry-url: 'https://registry.npmjs.org'
-      - name: Build (Debug)
-        run: dotnet build DprintPluginRoslyn
       - name: Test
         run: dotnet test
-      - name: Test Exe
-        run: cd test && cargo test
-      - name: Build (Release)
+      - name: Install WASI SDK
         run: |-
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime osx-x64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime osx-arm64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-x64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-musl-x64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-arm64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime linux-musl-arm64
-          dotnet build DprintPluginRoslyn -c Release --self-contained --runtime win-x64
-      - name: Package
+          curl -sSfL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz | tar xz -C "$RUNNER_TEMP"
+          echo "WASI_SDK_PATH=$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" >> "$GITHUB_ENV"
+      - name: Build Wasm
         run: |-
-          RELEASE_DIR=$GITHUB_WORKSPACE/DprintPluginRoslyn/bin/Release/net10.0
-          cd $RELEASE_DIR/osx-x64
-          zip -r ../../../../../dprint-plugin-roslyn-x86_64-apple-darwin.zip ./*
-          cd $RELEASE_DIR/osx-arm64
-          zip -r ../../../../../dprint-plugin-roslyn-aarch64-apple-darwin.zip ./*
-          cd $RELEASE_DIR/linux-x64
-          zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip ./*
-          cd $RELEASE_DIR/linux-musl-x64
-          zip -r ../../../../../dprint-plugin-roslyn-x86_64-unknown-linux-musl.zip ./*
-          cd $RELEASE_DIR/linux-arm64
-          zip -r ../../../../../dprint-plugin-roslyn-aarch64-unknown-linux-gnu.zip ./*
-          cd $RELEASE_DIR/linux-musl-arm64
-          zip -r ../../../../../dprint-plugin-roslyn-aarch64-unknown-linux-musl.zip ./*
-          cd $RELEASE_DIR/win-x64
-          zip -r ../../../../../dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip ./*
-      - name: Create plugin file
-        run: deno run --allow-read=. --allow-write=. scripts/create_plugin_file.ts
+          dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm
+          cp DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm plugin.wasm
+      - name: Install dprint
+        run: |-
+          curl -fsSL https://dprint.dev/install.sh | sh
+          echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"
+      - name: Test Wasm
+        env:
+          DPRINT_ROSLYN_WASM_PATH: '${{ github.workspace }}/plugin.wasm'
+        run: dotnet test --filter TestCategory=Wasm
       - name: Get tag version
         id: get_tag_version
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'echo TAG_VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT'
-      - name: Build npm packages
+      - name: Build npm package
         if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: deno run -A scripts/create_npm_packages.ts
+        run: deno run -A scripts/create_npm_package.ts
       - name: Create release notes
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt'
@@ -78,20 +62,12 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          files: |-
-            dprint-plugin-roslyn-x86_64-apple-darwin.zip
-            dprint-plugin-roslyn-aarch64-apple-darwin.zip
-            dprint-plugin-roslyn-x86_64-unknown-linux-gnu.zip
-            dprint-plugin-roslyn-x86_64-unknown-linux-musl.zip
-            dprint-plugin-roslyn-aarch64-unknown-linux-gnu.zip
-            dprint-plugin-roslyn-aarch64-unknown-linux-musl.zip
-            dprint-plugin-roslyn-x86_64-pc-windows-msvc.zip
-            plugin.json
+          files: plugin.wasm
           body_path: '${{ github.workspace }}-CHANGELOG.txt'
           draft: false
       - name: Upgrade npm
         if: 'startsWith(github.ref, ''refs/tags/'')'
         run: npm install --global npm@latest
-      - name: Publish npm packages
+      - name: Publish npm package
         if: 'startsWith(github.ref, ''refs/tags/'')'
-        run: deno run -A scripts/publish_npm_packages.ts
+        run: npm publish --access public --provenance npm-dist

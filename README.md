@@ -6,7 +6,7 @@ Wrapper around [Roslyn](https://github.com/dotnet/roslyn) in order to use it as 
 
 ## Install
 
-1. Install [dprint](https://dprint.dev/install/)
+1. Install [dprint](https://dprint.dev/install/) 0.61.0 or later
 1. Run `dprint init`
 1. Run `dprint add roslyn`
 
@@ -27,3 +27,13 @@ Specify a "roslyn" configuration property in _dprint.json_ if desired:
 C# configuration uses the [`CSharpFormattingOptions`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.csharp.formatting.csharpformattingoptions?view=roslyn-dotnet) (use `"csharp.<property name goes here>": <value goes here>` in the configuration file).
 
 It does not seem like roslyn supports any VB specific configuration.
+
+## Development
+
+The plugin is compiled to a Wasm module using [NativeAOT-LLVM](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT-LLVM).
+
+1. Run the tests with `dotnet test`
+1. Install version 29 of the [WASI SDK](https://github.com/WebAssembly/wasi-sdk/releases) and set the `WASI_SDK_PATH` environment variable to its directory.
+1. Run `dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm`, which creates _DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm_
+1. Reference the path to the _.wasm_ file in the `"plugins"` array of a dprint configuration file to try it out.
+1. Run the tests that format with the _.wasm_ file in dprint by setting the `DPRINT_ROSLYN_WASM_PATH` environment variable to its path and running `dotnet test --filter TestCategory=Wasm`. These use the `dprint` on the path or the executable at the `DPRINT_PATH` environment variable.

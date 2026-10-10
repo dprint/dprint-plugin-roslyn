@@ -1,6 +1,5 @@
 using Dprint.Plugins.Roslyn.Configuration;
 using Dprint.Plugins.Roslyn.Formatters;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using System;
@@ -13,7 +12,6 @@ public class ResolvedContext
 {
     public IReadOnlyList<ConfigurationDiagnostic> Diagnostics { get; init; } = null!;
     public OptionSet Options { get; init; } = null!;
-    public AdhocWorkspace AdhocWorkspace { get; init; } = null!;
     public CodeFormatters Formatters { get; init; } = null!;
 }
 
@@ -74,11 +72,10 @@ public class Workspace
         IReadOnlyDictionary<string, object> overrideConfig
     )
     {
-        var workspace = new AdhocWorkspace();
         var formatters = new ICodeFormatter[]
         {
-            new CSharpCodeFormatter(workspace),
-            new VisualBasicCodeFormatter(workspace),
+            new CSharpCodeFormatter(),
+            new VisualBasicCodeFormatter(),
         };
         var pluginConfig = readonlyPluginConfig.ToDictionary(kv => kv.Key, kv => kv.Value);
         foreach (var (key, value) in overrideConfig)
@@ -86,8 +83,11 @@ public class Workspace
             pluginConfig[key] = value;
         }
 
-        var context = new ConfigurationResolutionContext(pluginConfig, workspace.Options);
+        var context = new ConfigurationResolutionContext(pluginConfig, new PluginOptionSet());
         var languages = formatters.Select(f => f.RoslynLanguageName).ToList();
+
+        // Roslyn defaults to the new line of the system, which is always "\n" in Wasm
+        context.ChangeOption(FormattingOptions.NewLine, languages, ConfigurationHelpers.AutoNewLine);
 
         if (globalConfig.IndentWidth.HasValue)
         {
@@ -114,7 +114,6 @@ public class Workspace
         {
             Options = options,
             Diagnostics = context.GetDiagnostics().ToList(),
-            AdhocWorkspace = workspace,
             Formatters = new CodeFormatters(formatters, options),
         };
     }

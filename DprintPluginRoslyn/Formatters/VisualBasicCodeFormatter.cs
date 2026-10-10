@@ -1,9 +1,9 @@
 using Dprint.Plugins.Roslyn.Configuration;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
 using Microsoft.CodeAnalysis.VisualBasic;
+using Microsoft.CodeAnalysis.VisualBasic.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -12,13 +12,7 @@ namespace Dprint.Plugins.Roslyn.Formatters;
 
 public class VisualBasicCodeFormatter : ICodeFormatter
 {
-    private readonly AdhocWorkspace _workspace;
     private readonly string _languageKeyPrefix = "visualBasic.";
-
-    public VisualBasicCodeFormatter(AdhocWorkspace workspace)
-    {
-        _workspace = workspace;
-    }
 
     public string RoslynLanguageName => LanguageNames.VisualBasic;
 
@@ -29,15 +23,9 @@ public class VisualBasicCodeFormatter : ICodeFormatter
 
     public SourceText FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token)
     {
-        SyntaxNode formattedNode;
-
         var syntaxTree = VisualBasicSyntaxTree.ParseText(text);
         var root = syntaxTree.GetCompilationUnitRoot();
-        if (range.HasValue)
-            formattedNode = Formatter.Format(root, range.Value, _workspace, options, token);
-        else
-            formattedNode = Formatter.Format(root, _workspace, options, token);
-
+        var formattedNode = SyntaxFormatter.Format(VisualBasicSyntaxFormatting.Instance, root, range, options, token);
         return formattedNode.GetText(text.Encoding, text.ChecksumAlgorithm);
     }
 

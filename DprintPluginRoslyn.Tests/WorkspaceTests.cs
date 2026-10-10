@@ -35,6 +35,42 @@ public class WorkspaceTests
         var resolvedConfig = workspace.GetFormatters(1).GetResolvedConfig();
         Assert.That(resolvedConfig["csharp.indentBlock"], Is.EqualTo(true));
         Assert.That(resolvedConfig["visualBasic.indentationSize"], Is.EqualTo(4));
+        Assert.That(resolvedConfig["csharp.newLine"], Is.EqualTo("auto"));
+    }
+
+    [TestCase("\r\n")]
+    [TestCase("\n")]
+    public void FormatCode_DefaultNewLineKind_UsesLineEndingsOfFile(string newLine)
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new());
+
+        var result = FormatIfStatement(workspace, newLine);
+
+        Assert.That(result, Is.EqualTo(GetExpectedIfStatement(newLine, newLine)));
+    }
+
+    [TestCase("lf", "\n")]
+    [TestCase("crlf", "\r\n")]
+    public void FormatCode_NewLineKind_UsesItForNewLines(string newLineKind, string expectedNewLine)
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new(), new() { { "newLineKind", newLineKind } });
+
+        var result = FormatIfStatement(workspace, "\n");
+
+        Assert.That(result, Is.EqualTo(GetExpectedIfStatement("\n", expectedNewLine)));
+    }
+
+    [Test]
+    public void FormatCode_AutoNewLineKind_OverridesGlobalConfig()
+    {
+        var workspace = new Workspace();
+        workspace.SetConfig(1, new() { NewLineKind = "lf" }, new() { { "newLineKind", "auto" } });
+
+        var result = FormatIfStatement(workspace, "\r\n");
+
+        Assert.That(result, Is.EqualTo(GetExpectedIfStatement("\r\n", "\r\n")));
     }
 
     [Test]
@@ -42,7 +78,7 @@ public class WorkspaceTests
     {
         var workspace = new Workspace();
         var textBytes = Encoding.UTF8.GetBytes("{\"indentWidth\": 2 }");
-        var pluginConfig = new Serialization.JsonSerializer().Deserialize<Dictionary<string, object>>(textBytes);
+        var pluginConfig = Serialization.PluginJson.DeserializeConfig(textBytes);
         workspace.SetConfig(2, new(), pluginConfig);
         var diagnostics = workspace.GetDiagnostics(2);
         Assert.That(diagnostics.Count, Is.EqualTo(0));
@@ -75,5 +111,23 @@ public class WorkspaceTests
         var result = workspace.GetFormatters(1).FormatCode("file.cs", input, null, CancellationToken.None);
 
         Assert.That(result, Is.Null);
+    }
+
+    /// <summary>
+    /// Formats code where Roslyn moves the brace of an if statement to a new line.
+    /// </summary>
+    private static string FormatIfStatement(Workspace workspace, string fileNewLine)
+    {
+        var lines = new[] { "class A", "{", "    void M()", "    {", "        if (true) {", "        }", "    }", "}", "" };
+        var input = Encoding.UTF8.GetBytes(string.Join(fileNewLine, lines));
+        var result = workspace.GetFormatters(1).FormatCode("file.cs", input, null, CancellationToken.None);
+        Assert.That(result, Is.Not.Null);
+        return Encoding.UTF8.GetString(result!);
+    }
+
+    private static string GetExpectedIfStatement(string fileNewLine, string insertedNewLine)
+    {
+        var lines = new[] { "class A", "{", "    void M()", "    {", $"        if (true){insertedNewLine}        {{", "        }", "    }", "}", "" };
+        return string.Join(fileNewLine, lines);
     }
 }
