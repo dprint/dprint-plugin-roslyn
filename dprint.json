@@ -5,6 +5,7 @@
     "newLineKind": "crlf"
   },
   "excludes": [
+    "**/node_modules",
     "**/*-lock.json",
     "**/obj",
     "**/bin",

@@ -55,6 +55,7 @@ workflow({
         name: "Setup and test npm deployment",
         run: [
           "cd deployment/npm",
+          "npm install",
           "node setup.js",
           "npm run test",
         ],

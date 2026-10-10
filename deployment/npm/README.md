@@ -17,12 +17,20 @@ Run `dprint add roslyn` or add the package to the `"plugins"` array of a dprint 
 }
 ```
 
-## Getting the path to the Wasm module
+## Use with @dprint/formatter
+
+Requires [@dprint/formatter](https://github.com/dprint/js-formatter) 0.6.0 or later.
 
 ```ts
+import { createFromBuffer } from "@dprint/formatter";
 import { getPath } from "@dprint/roslyn";
+import * as fs from "fs";
 
-console.log(getPath());
+const buffer = fs.readFileSync(getPath());
+const formatter = createFromBuffer(buffer);
+
+console.log(formatter.formatText({
+  filePath: "file.cs",
+  fileText: "namespace Test    {   }",
+}));
 ```
-
-Note the Wasm module can't be used with [@dprint/formatter](https://github.com/dprint/js-formatter) because it requires the WASI imports provided by the dprint CLI.
