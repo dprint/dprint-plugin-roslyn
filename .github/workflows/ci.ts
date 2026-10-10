@@ -97,7 +97,12 @@ workflow({
       {
         name: "Publish npm package",
         if: isTag,
-        run: "npm publish --access public --provenance deployment/npm",
+        // publish from within the directory because npm treats a path
+        // like "deployment/npm" as a GitHub repository
+        run: [
+          "cd deployment/npm",
+          "npm publish --access public --provenance",
+        ],
       },
     ],
   }],
