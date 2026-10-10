@@ -6,7 +6,7 @@ const buildJob = job("build", {
   name: "check updates",
   if: "github.repository == 'dprint/dprint-plugin-roslyn'",
   runsOn: "ubuntu-latest",
-  timeoutMinutes: 30,
+  timeoutMinutes: 60,
   steps: [
     {
       name: "Clone repository",
@@ -17,8 +17,18 @@ const buildJob = job("build", {
     setupDotnetStep,
     // the update script builds and tests the Wasm module as one of its checks
     ...setupWasmSteps,
+    // node is needed so the update script can install and run the OpenAI
+    // Codex CLI (@openai/codex) when a Roslyn update breaks the plugin.
+    { uses: "actions/setup-node@v6", with: { "node-version": "24.x" } },
     {
       name: "Run script",
+      env: {
+        OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}",
+        // model that fixes the plugin after a Roslyn update (Codex)
+        CODEX_MODEL: "gpt-5.6-terra",
+        // separate model that independently reviews the changes
+        REVIEW_MODEL: "gpt-5.6-sol",
+      },
       run: [
         `git config user.email "dprintbot@users.noreply.github.com"`,
         `git config user.name "dprintbot"`,

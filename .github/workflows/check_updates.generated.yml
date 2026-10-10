@@ -10,7 +10,7 @@ jobs:
     name: check updates
     if: github.repository == 'dprint/dprint-plugin-roslyn'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Clone repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -28,7 +28,14 @@ jobs:
         run: |-
           curl -fsSL https://dprint.dev/install.sh | sh
           echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.x
       - name: Run script
+        env:
+          OPENAI_API_KEY: '${{ secrets.OPENAI_API_KEY }}'
+          CODEX_MODEL: gpt-5.6-terra
+          REVIEW_MODEL: gpt-5.6-sol
         run: |-
           git config user.email "dprintbot@users.noreply.github.com"
           git config user.name "dprintbot"
