@@ -1,9 +1,8 @@
 #!/usr/bin/env -S deno run -A
 import { conditions, step, workflow } from "jsr:@david/gagen@^0.5.0";
+import { buildWasmCommand, setupDotnetStep, setupWasmSteps, testWasmCommand, wasmPath } from "./common.ts";
 
-const wasiSdkVersion = "29";
-const wasiSdkDir = `wasi-sdk-${wasiSdkVersion}.0-x86_64-linux`;
-const wasmPath = "DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm";
+const pluginName = "roslyn";
 
 const isTag = conditions.isTag();
 
@@ -31,61 +30,60 @@ workflow({
     steps: [
       { name: "Checkout", uses: "actions/checkout@v6" },
       { uses: "denoland/setup-deno@v2" },
-      {
-        uses: "actions/setup-dotnet@v5",
-        with: { "dotnet-version": "10.0.x" },
-      },
+      setupDotnetStep,
       {
         uses: "actions/setup-node@v6",
         with: { "node-version": "24.x", "registry-url": "https://registry.npmjs.org" },
       },
+      {
+        name: "Lint workflow generation",
+        run: [
+          "./.github/workflows/ci.ts --lint",
+          "./.github/workflows/check_updates.ts --lint",
+          "./.github/workflows/release.ts --lint",
+        ],
+      },
       { name: "Test", run: "dotnet test" },
-      {
-        name: "Install WASI SDK",
-        run: [
-          `curl -sSfL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${wasiSdkVersion}/${wasiSdkDir}.tar.gz | tar xz -C "$RUNNER_TEMP"`,
-          `echo "WASI_SDK_PATH=$RUNNER_TEMP/${wasiSdkDir}" >> "$GITHUB_ENV"`,
-        ],
-      },
-      {
-        name: "Build Wasm",
-        run: [
-          "dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm",
-          `cp ${wasmPath} plugin.wasm`,
-        ],
-      },
-      {
-        // requires a version of dprint that provides the WASI imports to Wasm plugins
-        name: "Install dprint",
-        run: [
-          "curl -fsSL https://dprint.dev/install.sh | sh",
-          `echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"`,
-        ],
-      },
+      ...setupWasmSteps,
+      { name: "Build Wasm", run: buildWasmCommand },
       {
         name: "Test Wasm",
-        env: { DPRINT_ROSLYN_WASM_PATH: "${{ github.workspace }}/plugin.wasm" },
-        run: "dotnet test --filter TestCategory=Wasm",
+        env: { DPRINT_ROSLYN_WASM_PATH: `\${{ github.workspace }}/${wasmPath}` },
+        run: testWasmCommand,
+      },
+      {
+        name: "Setup and test npm deployment",
+        run: [
+          "cd deployment/npm",
+          "npm install",
+          "node setup.js",
+          "npm run test",
+        ],
       },
       getTagVersion,
       {
-        name: "Build npm package",
+        name: "Pre-release",
         if: isTag,
-        run: "deno run -A scripts/create_npm_package.ts",
-      },
-      {
-        name: "Create release notes",
-        if: isTag,
-        run:
+        run: [
+          "# update config schema to have version",
+          `sed -i 's/${pluginName}\\/0.0.0/${pluginName}\\/${getTagVersion.outputs.TAG_VERSION}/' deployment/schema.json`,
+          "# update the npm package to have version",
+          "(cd deployment/npm && node setup.js sync-version)",
+          "# create release notes",
           `deno run -A ./scripts/generate_release_notes.ts ${getTagVersion.outputs.TAG_VERSION} > \${{ github.workspace }}-CHANGELOG.txt`,
+        ],
       },
       {
         name: "Release",
         if: isTag,
+        // pinned because softprops/action-gh-release was once compromised
         uses: "softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844",
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
         with: {
-          files: "plugin.wasm",
+          files: [
+            "deployment/npm/plugin.wasm",
+            "deployment/schema.json",
+          ].join("\n"),
           body_path: "${{ github.workspace }}-CHANGELOG.txt",
           draft: false,
         },
@@ -99,7 +97,7 @@ workflow({
       {
         name: "Publish npm package",
         if: isTag,
-        run: "npm publish --access public --provenance npm-dist",
+        run: "npm publish --access public --provenance deployment/npm",
       },
     ],
   }],

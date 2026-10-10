@@ -18,6 +18,9 @@ public class PluginTests
         Assert.That(json, Does.Contain("""
             "configKey":"roslyn"
             """.Trim()));
+        Assert.That(json, Does.Match("""
+            "configSchemaUrl":"https://plugins\.dprint\.dev/dprint/dprint-plugin-roslyn/\d+\.\d+\.\d+/schema\.json"
+            """.Trim()));
     }
 
     [Test]

@@ -36,4 +36,9 @@ The plugin is compiled to a Wasm module using [NativeAOT-LLVM](https://github.co
 1. Install version 29 of the [WASI SDK](https://github.com/WebAssembly/wasi-sdk/releases) and set the `WASI_SDK_PATH` environment variable to its directory.
 1. Run `dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm`, which creates _DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm_
 1. Reference the path to the _.wasm_ file in the `"plugins"` array of a dprint configuration file to try it out.
+1. Update the generated configuration schema at _deployment/schema.json_ by running `dotnet test` with the `UPDATE=1` environment variable.
 1. Run the tests that format with the _.wasm_ file in dprint by setting the `DPRINT_ROSLYN_WASM_PATH` environment variable to its path and running `dotnet test --filter TestCategory=Wasm`. These use the `dprint` on the path or the executable at the `DPRINT_PATH` environment variable.
+
+### Releasing
+
+Run the [release workflow](https://github.com/dprint/dprint-plugin-roslyn/actions/workflows/release.generated.yml), which bumps the version and pushes a tag. The CI workflow then publishes the GitHub release and the npm package for the tag.

@@ -1,0 +1,318 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/0.0.0/schema.json",
+  "type": "object",
+  "definitions": {
+    "indentWidth": {
+      "description": "The number of characters for an indent.",
+      "type": "number",
+      "default": 4
+    },
+    "useTabs": {
+      "description": "Whether to use tabs (true) or spaces (false).",
+      "type": "boolean",
+      "default": false
+    },
+    "newLineKind": {
+      "description": "The kind of newline to use.",
+      "type": "string",
+      "default": "auto",
+      "oneOf": [
+        {
+          "const": "auto",
+          "description": "For each file, uses the newline kind found at the end of the last line."
+        },
+        {
+          "const": "crlf",
+          "description": "Uses carriage return, line feed."
+        },
+        {
+          "const": "lf",
+          "description": "Uses line feed."
+        },
+        {
+          "const": "system",
+          "description": "Uses line feed, because the plugin is unable to see the system standard."
+        }
+      ]
+    }
+  },
+  "properties": {
+    "locked": {
+      "description": "Whether the configuration is not allowed to be overriden or extended.",
+      "type": "boolean"
+    },
+    "indentWidth": {
+      "$ref": "#/definitions/indentWidth"
+    },
+    "useTabs": {
+      "$ref": "#/definitions/useTabs"
+    },
+    "newLineKind": {
+      "$ref": "#/definitions/newLineKind"
+    },
+    "csharp.indentWidth": {
+      "$ref": "#/definitions/indentWidth"
+    },
+    "csharp.useTabs": {
+      "$ref": "#/definitions/useTabs"
+    },
+    "csharp.newLineKind": {
+      "$ref": "#/definitions/newLineKind"
+    },
+    "visualBasic.indentWidth": {
+      "$ref": "#/definitions/indentWidth"
+    },
+    "visualBasic.useTabs": {
+      "$ref": "#/definitions/useTabs"
+    },
+    "visualBasic.newLineKind": {
+      "$ref": "#/definitions/newLineKind"
+    },
+    "csharp.indentBlock": {
+      "description": "Sets the CSharpFormattingOptions.IndentBlock option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.indentBraces": {
+      "description": "Sets the CSharpFormattingOptions.IndentBraces option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.indentSwitchCaseSection": {
+      "description": "Sets the CSharpFormattingOptions.IndentSwitchCaseSection option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.indentSwitchCaseSectionWhenBlock": {
+      "description": "Sets the CSharpFormattingOptions.IndentSwitchCaseSectionWhenBlock option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.indentSwitchSection": {
+      "description": "Sets the CSharpFormattingOptions.IndentSwitchSection option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.labelPositioning": {
+      "description": "Sets the CSharpFormattingOptions.LabelPositioning option of Roslyn.",
+      "type": "string",
+      "default": "oneLess",
+      "enum": [
+        "leftMost",
+        "oneLess",
+        "noIndent"
+      ]
+    },
+    "csharp.newLineForCatch": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForCatch option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLineForClausesInQuery": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForClausesInQuery option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLineForElse": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForElse option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLineForFinally": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForFinally option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLineForMembersInAnonymousTypes": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForMembersInAnonymousTypes option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLineForMembersInObjectInit": {
+      "description": "Sets the CSharpFormattingOptions.NewLineForMembersInObjectInit option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInAccessors": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAccessors option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInAnonymousMethods": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAnonymousMethods option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInAnonymousTypes": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAnonymousTypes option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInControlBlocks": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInControlBlocks option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInLambdaExpressionBody": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInLambdaExpressionBody option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInMethods": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInMethods option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInObjectCollectionArrayInitializers": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInObjectCollectionArrayInitializers option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInProperties": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInProperties option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.newLinesForBracesInTypes": {
+      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInTypes option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceAfterCast": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterCast option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceAfterColonInBaseTypeDeclaration": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterColonInBaseTypeDeclaration option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceAfterComma": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterComma option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceAfterControlFlowStatementKeyword": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterControlFlowStatementKeyword option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceAfterDot": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterDot option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceAfterMethodCallName": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterMethodCallName option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceAfterSemicolonsInForStatement": {
+      "description": "Sets the CSharpFormattingOptions.SpaceAfterSemicolonsInForStatement option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceBeforeColonInBaseTypeDeclaration": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBeforeColonInBaseTypeDeclaration option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.spaceBeforeComma": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBeforeComma option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBeforeDot": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBeforeDot option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBeforeOpenSquareBracket": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBeforeOpenSquareBracket option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBeforeSemicolonsInForStatement": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBeforeSemicolonsInForStatement option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBetweenEmptyMethodCallParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptyMethodCallParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBetweenEmptyMethodDeclarationParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptyMethodDeclarationParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceBetweenEmptySquareBrackets": {
+      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptySquareBrackets option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinCastParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinCastParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinExpressionParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinExpressionParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinMethodCallParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinMethodCallParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinMethodDeclarationParenthesis": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinMethodDeclarationParenthesis option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinOtherParentheses": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinOtherParentheses option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spaceWithinSquareBrackets": {
+      "description": "Sets the CSharpFormattingOptions.SpaceWithinSquareBrackets option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spacesIgnoreAroundVariableDeclaration": {
+      "description": "Sets the CSharpFormattingOptions.SpacesIgnoreAroundVariableDeclaration option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spacingAfterMethodDeclarationName": {
+      "description": "Sets the CSharpFormattingOptions.SpacingAfterMethodDeclarationName option of Roslyn.",
+      "type": "boolean",
+      "default": false
+    },
+    "csharp.spacingAroundBinaryOperator": {
+      "description": "Sets the CSharpFormattingOptions.SpacingAroundBinaryOperator option of Roslyn.",
+      "type": "string",
+      "default": "single",
+      "enum": [
+        "single",
+        "ignore",
+        "remove"
+      ]
+    },
+    "csharp.wrappingKeepStatementsOnSingleLine": {
+      "description": "Sets the CSharpFormattingOptions.WrappingKeepStatementsOnSingleLine option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    },
+    "csharp.wrappingPreserveSingleLine": {
+      "description": "Sets the CSharpFormattingOptions.WrappingPreserveSingleLine option of Roslyn.",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

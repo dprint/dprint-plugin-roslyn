@@ -1,0 +1,34 @@
+{
+  "name": "@dprint/roslyn",
+  "version": "0.0.0",
+  "description": "Wasm module for dprint-plugin-roslyn, which formats C# and Visual Basic code with Roslyn.",
+  "keywords": [
+    "csharp",
+    "c#",
+    "visual basic",
+    "vb",
+    "dotnet",
+    "roslyn",
+    "code",
+    "formatter",
+    "dprint"
+  ],
+  "homepage": "https://github.com/dprint/dprint-plugin-roslyn#readme",
+  "bugs": {
+    "url": "https://github.com/dprint/dprint-plugin-roslyn/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dprint/dprint-plugin-roslyn.git"
+  },
+  "license": "MIT",
+  "author": "David Sherret",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "scripts": {
+    "test": "node index.test.js"
+  },
+  "devDependencies": {
+    "@dprint/formatter": "~0.6.0"
+  }
+}

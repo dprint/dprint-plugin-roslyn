@@ -1,83 +1,146 @@
 /**
- * This script crudely checks for any Roslyn updates and then automatically
+ * This script checks for any Roslyn updates and then automatically
  * publishes a new version of the plugin if so.
+ *
+ * Requires the WASI_SDK_PATH environment variable and dprint in order to
+ * build and test the Wasm module.
  */
-import * as path from "https://deno.land/std@0.130.0/path/mod.ts";
-import $ from "https://deno.land/x/dax@0.36.0/mod.ts";
-import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
+import $ from "jsr:@david/dax@^0.47.0";
+import { aiFixRoslynUpdate } from "./ai_fix.ts";
+import { bumpVersion, csprojPath, publishVersion, rootDir } from "./utils.ts";
 
-// todo: rewrite to fully use dax
+const wasmPath = rootDir.join("DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm");
 
-const rootDirPath = path.dirname(path.dirname(path.fromFileUrl(import.meta.url)));
+Deno.chdir(rootDir.toString());
 
-console.log("Installing dotnet-outdated-tool...");
-try {
-  await runCommand("dotnet tool install --global dotnet-outdated-tool".split(" "));
-} catch {
-  // ignore, installed
-}
+const previousRoslynVersion = getRoslynVersion();
 
-console.log("Upgrading packages...");
-await runCommand("dotnet outdated --upgrade".split(" "));
+$.logStep("Installing dotnet-outdated-tool...");
+// fails when already installed
+await $`dotnet tool install --global dotnet-outdated-tool`.noThrow();
 
-if (!await hasFileChanged("./DprintPluginRoslyn/DprintPluginRoslyn.csproj")) {
-  console.log("No changes.");
+$.logStep("Upgrading packages...");
+await $`dotnet outdated --upgrade`;
+
+if (!await hasFileChanged(csprojPath.toString())) {
+  $.log("No changes.");
   Deno.exit(0);
 }
 
-console.log("Found changes.");
+const roslynVersion = getRoslynVersion();
+const isPatchBump = isPatchBumpOrSame(previousRoslynVersion, roslynVersion);
+$.log(`Found changes (Roslyn ${previousRoslynVersion} -> ${roslynVersion}).`);
 
-// run the tests
-console.log("Running tests...");
-await runCommand("dotnet test".split(" "));
+// Verify the update. New and removed formatting options need no changes
+// because they're found with reflection and the config schema is generated,
+// so only a failure gets an AI fix attempt.
+$.logStep("Running checks (test + wasm build + wasm test)...");
+const checks = await runChecks();
 
-// commit current changes
-// todo: better message here
+if (!checks.passed) {
+  $.logStep("Update failed the checks — running AI fix...");
+  await aiFixRoslynUpdate({
+    fromVersion: previousRoslynVersion,
+    toVersion: roslynVersion,
+    // hand the failing output to the AI so it can go straight to fixing
+    // instead of re-running the checks just to rediscover the errors.
+    checkOutput: checks.output,
+    checkCommands: checkCommands().map((check) => check.description),
+  });
+
+  // the AI must leave the project in a passing state, otherwise fail the
+  // workflow (nothing gets published and the maintainer is notified).
+  $.logStep("Re-running checks after AI changes...");
+  await assertChecks();
+}
+
+if (Deno.args.includes("--skip-publish")) {
+  Deno.exit(0);
+}
+
+$.logStep("Committing Roslyn update commit...");
 await $`git add .`;
-await $`git commit -m "feat: update roslyn plugin"`;
+const message = previousRoslynVersion === roslynVersion
+  ? "fix: update dependencies"
+  : `${isPatchBump ? "fix" : "feat"}: update to Roslyn ${roslynVersion}`;
+await $`git commit -m ${message}`;
 
-console.log("Bumping version...");
-const newVersion = await bumpMinorVersion();
+$.logStep("Bumping version...");
+const newVersion = bumpVersion(isPatchBump ? "patch" : "minor");
+await publishVersion(newVersion);
 
-// release
-console.log(`Committing and publishing ${newVersion}...`);
-await runCommand("git add .".split(" "));
-await runCommand(`git commit -m ${newVersion}`.split(" "));
-await runCommand(`git push origin main`.split(" "));
-await runCommand(`git tag ${newVersion}`.split(" "));
-await runCommand(`git push origin ${newVersion}`.split(" "));
-
-async function bumpMinorVersion() {
-  const projectFile = path.join(rootDirPath, "./DprintPluginRoslyn/DprintPluginRoslyn.csproj");
-  const text = await Deno.readTextFile(projectFile);
-  const versionRegex = /\<Version\>([0-9]+\.[0-9]+\.[0-9]+)\</;
-  const currentVersion = text.match(versionRegex)?.[1];
-  if (currentVersion == null) {
-    throw new Error("Could not find version.");
+// the checks that must pass before publishing. The Wasm build and tests are
+// included because that is what actually ships and an update may only break
+// when compiled ahead of time. `inheritPiped` + `captureCombined` streams the
+// output to the CI log live while also capturing it so a failure can be handed
+// to the AI.
+async function runChecks(): Promise<{ passed: boolean; output: string }> {
+  const results = [];
+  for (const check of checkCommands()) {
+    const result = await check.run()
+      .stdout("inheritPiped")
+      .stderr("inheritPiped")
+      .captureCombined()
+      .noThrow();
+    results.push(result);
+    // the later checks depend on the earlier ones
+    if (result.code !== 0) {
+      break;
+    }
   }
-  const newVersion = semver.parse(currentVersion)!.inc("minor").toString();
-  const newText = text.replace(versionRegex, `<Version>${newVersion}<`);
-  await Deno.writeTextFile(projectFile, newText);
-  return newVersion;
+  const failures = results.filter((r) => r.code !== 0);
+  return {
+    passed: failures.length === 0,
+    output: failures.map((r) => r.combined).join("\n\n"),
+  };
+}
+
+// same checks as `runChecks`, but throws on the first failure so the workflow
+// aborts before anything is committed, tagged, or published.
+async function assertChecks(): Promise<void> {
+  for (const check of checkCommands()) {
+    await check.run();
+  }
+}
+
+// a function (not a top-level const) so it is hoisted -- `runChecks` is called
+// from top-level code above before a const declared here would be initialized.
+function checkCommands() {
+  return [
+    {
+      // also updates the config schema for any options Roslyn added or removed
+      description: "UPDATE=1 dotnet test",
+      run: () => $`dotnet test`.env("UPDATE", "1"),
+    },
+    {
+      description: "dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm",
+      run: () => $`dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm`,
+    },
+    {
+      description: `DPRINT_ROSLYN_WASM_PATH=${wasmPath} dotnet test --filter TestCategory=Wasm`,
+      run: () => $`dotnet test --filter TestCategory=Wasm`.env("DPRINT_ROSLYN_WASM_PATH", wasmPath.toString()),
+    },
+  ];
+}
+
+function getRoslynVersion() {
+  const match = csprojPath.readTextSync().match(
+    /Include="Microsoft\.CodeAnalysis\.CSharp\.Workspaces" Version="([^"]+)"/,
+  );
+  const version = match?.[1];
+  if (version == null) {
+    throw new Error("Could not find the Roslyn version in the project file.");
+  }
+  return version;
+}
+
+function isPatchBumpOrSame(from: string, to: string) {
+  const [fromMajor, fromMinor] = from.split(".");
+  const [toMajor, toMinor] = to.split(".");
+  return fromMajor === toMajor && fromMinor === toMinor;
 }
 
 async function hasFileChanged(file: string) {
-  try {
-    await runCommand(["git", "diff", "--exit-code", file]);
-    return false;
-  } catch {
-    return true;
-  }
-}
-
-async function runCommand(cmd: string[]) {
-  const p = Deno.run({
-    cmd,
-    cwd: rootDirPath,
-  });
-  const status = await p.status();
-  p.close();
-  if (status.code !== 0) {
-    throw new Error("Failed.");
-  }
+  const result = await $`git diff --exit-code ${file}`.noThrow().quiet();
+  return result.code !== 0;
 }
