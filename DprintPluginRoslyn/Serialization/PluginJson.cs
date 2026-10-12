@@ -83,6 +83,21 @@ public static class PluginJson
         });
     }
 
+    public static byte[] SerializeFileMatchingInfo(IEnumerable<string> fileExtensions)
+    {
+        return Serialize(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("fileExtensions");
+            foreach (var fileExtension in fileExtensions)
+                writer.WriteStringValue(fileExtension);
+            writer.WriteEndArray();
+            writer.WriteStartArray("fileNames");
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        });
+    }
+
     public static byte[] SerializeConfig(IReadOnlyDictionary<string, object> config)
     {
         return Serialize(writer =>

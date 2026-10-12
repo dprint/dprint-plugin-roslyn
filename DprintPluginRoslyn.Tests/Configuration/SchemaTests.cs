@@ -100,6 +100,15 @@ public class SchemaTests
             }
         }
 
+        foreach (var (prefix, languageName) in new[] { ("csharp.", "C#"), ("visualBasic.", "Visual Basic") })
+        {
+            writer.WriteStartObject(prefix + "enabled");
+            writer.WriteString("description", $"Whether to format {languageName} files.");
+            writer.WriteString("type", "boolean");
+            writer.WriteBoolean("default", true);
+            writer.WriteEndObject();
+        }
+
         var optionProperties = typeof(CSharpFormattingOptions)
             .GetProperties(BindingFlags.Public | BindingFlags.Static)
             .OrderBy(property => property.Name, StringComparer.Ordinal);

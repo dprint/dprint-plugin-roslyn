@@ -45,9 +45,9 @@ public class Plugin
         return PluginJson.SerializeConfig(_workspace.GetFormatters(configId).GetResolvedConfig());
     }
 
-    public byte[] GetFileMatchingInfo()
+    public byte[] GetFileMatchingInfo(uint configId)
     {
-        return """{"fileExtensions":["cs","vb"],"fileNames":[]}"""u8.ToArray();
+        return PluginJson.SerializeFileMatchingInfo(_workspace.GetFormatters(configId).GetFileExtensions());
     }
 
     public byte[] CheckConfigUpdates()

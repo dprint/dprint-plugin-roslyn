@@ -69,6 +69,16 @@
     "visualBasic.newLineKind": {
       "$ref": "#/definitions/newLineKind"
     },
+    "csharp.enabled": {
+      "description": "Whether to format C# files.",
+      "type": "boolean",
+      "default": true
+    },
+    "visualBasic.enabled": {
+      "description": "Whether to format Visual Basic files.",
+      "type": "boolean",
+      "default": true
+    },
     "csharp.indentBlock": {
       "description": "Sets the CSharpFormattingOptions.IndentBlock option of Roslyn.",
       "type": "boolean",

@@ -92,6 +92,51 @@ public class PluginTests
     }
 
     [Test]
+    public void GetFileMatchingInfo_Default_MatchesBothLanguages()
+    {
+        var plugin = CreatePluginWithDefaultConfig();
+
+        Assert.That(ToString(plugin.GetFileMatchingInfo(1)), Is.EqualTo("""{"fileExtensions":["cs","vb"],"fileNames":[]}"""));
+    }
+
+    [TestCase("csharp.enabled", "vb", "file.cs", "namespace Test    {   }\n")]
+    [TestCase("visualBasic.enabled", "cs", "file.vb", "Namespace    Test\nEnd  Namespace\n")]
+    public void Format_DisabledLanguage_DoesNotMatchOrFormat(string propertyName, string otherExtension, string filePath, string text)
+    {
+        var plugin = new Plugin();
+        plugin.RegisterConfig(1, ToBytes($$"""{ "global": {}, "plugin": { "newLineKind": "lf", "{{propertyName}}": false } }"""));
+
+        Assert.That(ToString(plugin.GetConfigDiagnostics(1)), Is.EqualTo("[]"));
+        Assert.That(ToString(plugin.GetFileMatchingInfo(1)), Is.EqualTo($$"""{"fileExtensions":["{{otherExtension}}"],"fileNames":[]}"""));
+        Assert.That(ToString(plugin.GetResolvedConfig(1)), Does.Contain($"\"{propertyName}\":false"));
+        Assert.That(Format(plugin, filePath, text), Is.Null);
+    }
+
+    [Test]
+    public void Format_EnabledLanguages_MatchesAndFormats()
+    {
+        var plugin = new Plugin();
+        plugin.RegisterConfig(1, ToBytes("""{ "global": {}, "plugin": { "newLineKind": "lf", "csharp.enabled": true, "visualBasic.enabled": true } }"""));
+
+        Assert.That(ToString(plugin.GetConfigDiagnostics(1)), Is.EqualTo("[]"));
+        Assert.That(ToString(plugin.GetFileMatchingInfo(1)), Is.EqualTo("""{"fileExtensions":["cs","vb"],"fileNames":[]}"""));
+        Assert.That(Format(plugin, "file.cs", "namespace Test    {   }\n"), Is.EqualTo("namespace Test { }\n"));
+        Assert.That(Format(plugin, "file.vb", "Namespace    Test\nEnd  Namespace\n"), Is.EqualTo("Namespace Test\nEnd Namespace\n"));
+    }
+
+    [Test]
+    public void GetConfigDiagnostics_EnabledNotBool_Diagnostic()
+    {
+        var plugin = new Plugin();
+        plugin.RegisterConfig(1, ToBytes("""{ "global": {}, "plugin": { "csharp.enabled": "no" } }"""));
+
+        Assert.That(
+            ToString(plugin.GetConfigDiagnostics(1)),
+            Is.EqualTo("""[{"propertyName":"csharp.enabled","message":"Value must be a Boolean"}]""")
+        );
+    }
+
+    [Test]
     public void Format_OverrideConfig_UsesOverride()
     {
         var plugin = CreatePluginWithDefaultConfig();
