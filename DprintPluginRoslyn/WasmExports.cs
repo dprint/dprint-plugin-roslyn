@@ -48,7 +48,7 @@ public static unsafe class WasmExports
     public static uint GetResolvedConfig(uint configId) => SetSharedBytes(_plugin.GetResolvedConfig(configId));
 
     [UnmanagedCallersOnly(EntryPoint = "get_config_file_matching")]
-    public static uint GetConfigFileMatching(uint configId) => SetSharedBytes(_plugin.GetFileMatchingInfo());
+    public static uint GetConfigFileMatching(uint configId) => SetSharedBytes(_plugin.GetFileMatchingInfo(configId));
 
     [UnmanagedCallersOnly(EntryPoint = "check_config_updates")]
     public static uint CheckConfigUpdates()

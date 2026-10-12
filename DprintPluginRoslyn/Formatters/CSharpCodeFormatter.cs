@@ -17,9 +17,13 @@ public class CSharpCodeFormatter : ICodeFormatter
 
     public string RoslynLanguageName => LanguageNames.CSharp;
 
+    public string FileExtension => "cs";
+
+    public bool IsEnabled { get; private set; } = true;
+
     public bool ShouldFormat(string filePath)
     {
-        return filePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
+        return filePath.EndsWith($".{FileExtension}", StringComparison.OrdinalIgnoreCase);
     }
 
     public SourceText FormatText(SourceText text, TextSpan? range, OptionSet options, CancellationToken token)
@@ -32,6 +36,8 @@ public class CSharpCodeFormatter : ICodeFormatter
 
     public void ResolveConfiguration(ConfigurationResolutionContext context)
     {
+        IsEnabled = ConfigurationHelpers.HandleEnabledConfig(context, _languageKeyPrefix);
+
         // global config
         ConfigurationHelpers.HandleGlobalConfig(context, _languageKeyPrefix, LanguageNames.CSharp);
 
@@ -42,6 +48,7 @@ public class CSharpCodeFormatter : ICodeFormatter
     public IEnumerable<(string, object)> GetResolvedConfig(OptionSet options)
     {
         return ConfigurationHelpers.GetResolvedGlobalConfig(options, _languageKeyPrefix, LanguageNames.CSharp)
+            .Prepend(($"{_languageKeyPrefix}enabled", IsEnabled))
             .Concat(ConfigurationHelpers.GetResolvedPluginConfig(options, typeof(CSharpFormattingOptions), _languageKeyPrefix));
     }
 }

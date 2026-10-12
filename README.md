@@ -28,6 +28,20 @@ C# configuration uses the [`CSharpFormattingOptions`](https://docs.microsoft.com
 
 It does not seem like roslyn supports any VB specific configuration.
 
+### Disabling languages
+
+C# and Visual Basic are both formatted by default. To have the plugin leave the files of a language alone, set its `enabled` option to `false`:
+
+```jsonc
+{
+  "roslyn": {
+    "visualBasic.enabled": false,
+  },
+}
+```
+
+The options are `csharp.enabled` (`.cs` files) and `visualBasic.enabled` (`.vb` files). A disabled language's files are no longer matched by this plugin, so dprint formats them with the next plugin that matches them, if any.
+
 ## Development
 
 The plugin is compiled to a Wasm module using [NativeAOT-LLVM](https://github.com/dotnet/runtimelab/tree/feature/NativeAOT-LLVM).

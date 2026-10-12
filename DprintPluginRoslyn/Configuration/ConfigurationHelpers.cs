@@ -42,6 +42,14 @@ public static class ConfigurationHelpers
         }
     }
 
+    /// <summary>
+    /// Gets if a language is enabled, which it is unless its "enabled" configuration is false.
+    /// </summary>
+    public static bool HandleEnabledConfig(ConfigurationResolutionContext context, string languageKeyPrefix)
+    {
+        return !context.RemoveBool($"{languageKeyPrefix}enabled", out var isEnabled) || isEnabled;
+    }
+
     public static void HandlePluginConfig(ConfigurationResolutionContext context, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type formattingOptionsType, string languageKeyPrefix)
     {
         foreach (var key in context.GetConfigKeys().Where(key => key.StartsWith(languageKeyPrefix)))

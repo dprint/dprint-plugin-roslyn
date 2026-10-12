@@ -26,6 +26,8 @@ public class CodeFormatters
         var formatter = _codeFormatters.FirstOrDefault(formatter => formatter.ShouldFormat(filePath));
         if (formatter is null)
             throw new Exception($"Could not find formatter for file path: {filePath}");
+        if (!formatter.IsEnabled)
+            return null;
         // Don't create the source text from the bytes because that computes a checksum
         // using System.Security.Cryptography, which isn't supported in Wasm.
         var encoding = DetectEncoding(code);
@@ -55,6 +57,14 @@ public class CodeFormatters
             var index = Math.Clamp(byteIndex, preambleLength, code.Length);
             return encoding.GetCharCount(code, preambleLength, index - preambleLength);
         }
+    }
+
+    /// <summary>
+    /// Gets the file extensions of the enabled languages.
+    /// </summary>
+    public IEnumerable<string> GetFileExtensions()
+    {
+        return _codeFormatters.Where(formatter => formatter.IsEnabled).Select(formatter => formatter.FileExtension);
     }
 
     public Dictionary<string, object> GetResolvedConfig()
