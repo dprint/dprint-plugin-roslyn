@@ -85,11 +85,6 @@ public class SchemaTests
     {
         writer.WriteStartObject("properties");
 
-        writer.WriteStartObject("locked");
-        writer.WriteString("description", "Whether the configuration is not allowed to be overriden or extended.");
-        writer.WriteString("type", "boolean");
-        writer.WriteEndObject();
-
         foreach (var prefix in _languagePrefixes.Prepend(""))
         {
             foreach (var name in new[] { "indentWidth", "useTabs", "newLineKind" })
