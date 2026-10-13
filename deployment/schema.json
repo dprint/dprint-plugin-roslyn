@@ -38,10 +38,6 @@
     }
   },
   "properties": {
-    "locked": {
-      "description": "Whether the configuration is not allowed to be overriden or extended.",
-      "type": "boolean"
-    },
     "indentWidth": {
       "$ref": "#/definitions/indentWidth"
     },
