@@ -25,6 +25,8 @@
     <LinkerFlavor>lld</LinkerFlavor>
     <!-- Roslyn produces many trim warnings for code that the plugin doesn't use -->
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <!-- otherwise the module includes DWARF debug info, which is over half its size. Stack traces in error messages don't use it. -->
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
