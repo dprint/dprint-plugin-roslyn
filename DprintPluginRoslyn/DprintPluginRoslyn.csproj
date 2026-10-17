@@ -7,7 +7,7 @@
     <AssemblyName>dprint-plugin-roslyn</AssemblyName>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>0.23.2</Version>
+    <Version>0.23.3</Version>
     <Authors>David Sherret</Authors>
     <Company>Dprint Code Formatting</Company>
     <InvariantGlobalization>true</InvariantGlobalization>
