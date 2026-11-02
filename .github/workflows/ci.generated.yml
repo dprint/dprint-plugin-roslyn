@@ -9,7 +9,7 @@ on:
     branches:
       - main
     tags:
-      - "*"
+      - '*'
 jobs:
   build:
     name: test_release
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24.x
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
       - name: Lint workflow generation
         run: |-
           ./.github/workflows/ci.ts --lint
@@ -47,7 +47,7 @@ jobs:
         run: dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm
       - name: Test Wasm
         env:
-          DPRINT_ROSLYN_WASM_PATH: "${{ github.workspace }}/DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm"
+          DPRINT_ROSLYN_WASM_PATH: '${{ github.workspace }}/DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm'
         run: dotnet test --filter TestCategory=Wasm
       - name: Setup and test npm deployment
         run: |-
@@ -57,10 +57,10 @@ jobs:
           npm run test
       - name: Get tag version
         id: get_tag_version
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: 'echo TAG_VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT'
       - name: Pre-release
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: |-
           # update config schema to have version
           sed -i 's/roslyn\/0.0.0/roslyn\/${{ steps.get_tag_version.outputs.TAG_VERSION }}/' deployment/schema.json
@@ -69,19 +69,19 @@ jobs:
           # create release notes
           deno run -A ./scripts/generate_release_notes.ts ${{ steps.get_tag_version.outputs.TAG_VERSION }} > ${{ github.workspace }}-CHANGELOG.txt
       - name: Release
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         run: |-
           gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" \
             --notes-file ${{ github.workspace }}-CHANGELOG.txt \
             deployment/npm/plugin.wasm \
             deployment/schema.json
       - name: Upgrade npm
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: npm install --global npm@latest
       - name: Publish npm package
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: 'startsWith(github.ref, ''refs/tags/'')'
         run: |-
           cd deployment/npm
           npm publish --access public --provenance
