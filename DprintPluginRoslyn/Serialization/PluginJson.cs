@@ -25,6 +25,7 @@ public static class PluginJson
             writer.WriteString("helpUrl", "https://dprint.dev/plugins/roslyn");
             writer.WriteString("configSchemaUrl", $"https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/{version}/schema.json");
             writer.WriteString("updateUrl", "https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/latest.json");
+            writer.WriteBoolean("supportsRangeFormatting", true);
             writer.WriteEndObject();
         });
     }
