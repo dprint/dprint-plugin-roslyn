@@ -2,16 +2,151 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://plugins.dprint.dev/dprint/dprint-plugin-roslyn/0.0.0/schema.json",
   "type": "object",
+  "x-playground": {
+    "input": [
+      "using System;",
+      "using System.Collections.Generic;",
+      "",
+      "namespace Library{",
+      "  public enum Genre{Fiction,History,Science}",
+      "",
+      "  public class Book{",
+      "    public string Title{get;set;}",
+      "    public Genre Genre{get;init;}",
+      "      public int Year {get;set;}",
+      "  }",
+      "",
+      "    public class Catalog {",
+      "  private readonly Dictionary<string,Book> books=new Dictionary<string,Book>();",
+      "",
+      "  public void Add(Book book){",
+      "        if(books.ContainsKey(book.Title))throw new InvalidOperationException($\"'{book.Title}' is already in the catalog\");",
+      "    books[book.Title]=book;",
+      "  }",
+      "",
+      "      public IEnumerable<Book> Published(int from,int to){",
+      "    foreach(var book in books.Values){if(book.Year>=from&&book.Year<=to)yield return book;}",
+      "      }",
+      "  }",
+      "}"
+    ]
+  },
+  "x-sections": [
+    {
+      "title": "General",
+      "description": "The indentation and newlines of every language, and the languages that are formatted.",
+      "properties": [
+        "indentWidth",
+        "useTabs",
+        "newLineKind",
+        "csharp.enabled",
+        "visualBasic.enabled"
+      ]
+    },
+    {
+      "title": "Indentation",
+      "description": "The indentation of blocks, braces, `switch` statements, and labels in C#.",
+      "properties": [
+        "csharp.indentBlock",
+        "csharp.indentBraces",
+        "csharp.indentSwitchSection",
+        "csharp.indentSwitchCaseSection",
+        "csharp.indentSwitchCaseSectionWhenBlock",
+        "csharp.labelPositioning"
+      ]
+    },
+    {
+      "title": "Braces",
+      "description": "Whether an opening brace goes on a new line in C#.",
+      "properties": [
+        "csharp.newLinesForBracesInTypes",
+        "csharp.newLinesForBracesInMethods",
+        "csharp.newLinesForBracesInProperties",
+        "csharp.newLinesForBracesInAccessors",
+        "csharp.newLinesForBracesInControlBlocks",
+        "csharp.newLinesForBracesInAnonymousMethods",
+        "csharp.newLinesForBracesInLambdaExpressionBody",
+        "csharp.newLinesForBracesInAnonymousTypes",
+        "csharp.newLinesForBracesInObjectCollectionArrayInitializers"
+      ]
+    },
+    {
+      "title": "New lines",
+      "description": "Whether keywords, query clauses, and the members of initializers go on a new line in C#.",
+      "properties": [
+        "csharp.newLineForElse",
+        "csharp.newLineForCatch",
+        "csharp.newLineForFinally",
+        "csharp.newLineForClausesInQuery",
+        "csharp.newLineForMembersInObjectInit",
+        "csharp.newLineForMembersInAnonymousTypes"
+      ]
+    },
+    {
+      "title": "Spaces",
+      "description": "The spaces around punctuation, keywords, and operators in C#.",
+      "properties": [
+        "csharp.spaceAfterComma",
+        "csharp.spaceBeforeComma",
+        "csharp.spaceAfterDot",
+        "csharp.spaceBeforeDot",
+        "csharp.spaceAfterSemicolonsInForStatement",
+        "csharp.spaceBeforeSemicolonsInForStatement",
+        "csharp.spaceAfterColonInBaseTypeDeclaration",
+        "csharp.spaceBeforeColonInBaseTypeDeclaration",
+        "csharp.spaceAfterControlFlowStatementKeyword",
+        "csharp.spaceAfterCast",
+        "csharp.spacingAroundBinaryOperator",
+        "csharp.spacesIgnoreAroundVariableDeclaration"
+      ]
+    },
+    {
+      "title": "Parentheses and brackets",
+      "description": "The spaces in and before parentheses and square brackets in C#.",
+      "properties": [
+        "csharp.spaceAfterMethodCallName",
+        "csharp.spacingAfterMethodDeclarationName",
+        "csharp.spaceWithinMethodCallParentheses",
+        "csharp.spaceWithinMethodDeclarationParenthesis",
+        "csharp.spaceBetweenEmptyMethodCallParentheses",
+        "csharp.spaceBetweenEmptyMethodDeclarationParentheses",
+        "csharp.spaceWithinCastParentheses",
+        "csharp.spaceWithinExpressionParentheses",
+        "csharp.spaceWithinOtherParentheses",
+        "csharp.spaceBeforeOpenSquareBracket",
+        "csharp.spaceWithinSquareBrackets",
+        "csharp.spaceBetweenEmptySquareBrackets"
+      ]
+    },
+    {
+      "title": "Wrapping",
+      "description": "Whether code that's on a single line stays there in C#.",
+      "properties": [
+        "csharp.wrappingKeepStatementsOnSingleLine",
+        "csharp.wrappingPreserveSingleLine"
+      ]
+    }
+  ],
   "definitions": {
     "indentWidth": {
       "description": "The number of characters for an indent.",
-      "type": "number",
+      "type": "integer",
       "default": 4
     },
     "useTabs": {
       "description": "Whether to use tabs (true) or spaces (false).",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "oneOf": [
+        {
+          "const": true,
+          "description": "Uses tabs for indentation."
+        },
+        {
+          "const": false,
+          "description": "Uses spaces for indentation."
+        }
+      ]
     },
     "newLineKind": {
       "description": "The kind of newline to use.",
@@ -42,28 +177,42 @@
       "$ref": "#/definitions/indentWidth"
     },
     "useTabs": {
-      "$ref": "#/definitions/useTabs"
+      "$ref": "#/definitions/useTabs",
+      "x-example": {
+        "input": [
+          "class Counter",
+          "{",
+          "    int count;",
+          "}"
+        ]
+      }
     },
     "newLineKind": {
       "$ref": "#/definitions/newLineKind"
     },
     "csharp.indentWidth": {
-      "$ref": "#/definitions/indentWidth"
+      "$ref": "#/definitions/indentWidth",
+      "x-overrides": "indentWidth"
     },
     "csharp.useTabs": {
-      "$ref": "#/definitions/useTabs"
+      "$ref": "#/definitions/useTabs",
+      "x-overrides": "useTabs"
     },
     "csharp.newLineKind": {
-      "$ref": "#/definitions/newLineKind"
+      "$ref": "#/definitions/newLineKind",
+      "x-overrides": "newLineKind"
     },
     "visualBasic.indentWidth": {
-      "$ref": "#/definitions/indentWidth"
+      "$ref": "#/definitions/indentWidth",
+      "x-overrides": "indentWidth"
     },
     "visualBasic.useTabs": {
-      "$ref": "#/definitions/useTabs"
+      "$ref": "#/definitions/useTabs",
+      "x-overrides": "useTabs"
     },
     "visualBasic.newLineKind": {
-      "$ref": "#/definitions/newLineKind"
+      "$ref": "#/definitions/newLineKind",
+      "x-overrides": "newLineKind"
     },
     "csharp.enabled": {
       "description": "Whether to format C# files.",
@@ -76,249 +225,617 @@
       "default": true
     },
     "csharp.indentBlock": {
-      "description": "Sets the CSharpFormattingOptions.IndentBlock option of Roslyn.",
+      "description": "Whether to indent the contents of blocks. Sets the `CSharpFormattingOptions.IndentBlock` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "void Run()",
+          "{",
+          "    Start();",
+          "}"
+        ]
+      }
     },
     "csharp.indentBraces": {
-      "description": "Sets the CSharpFormattingOptions.IndentBraces option of Roslyn.",
+      "description": "Whether to indent the braces of blocks to the level of their contents. Sets the `CSharpFormattingOptions.IndentBraces` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "if (ready)",
+          "{",
+          "    Start();",
+          "}"
+        ]
+      }
     },
     "csharp.indentSwitchCaseSection": {
-      "description": "Sets the CSharpFormattingOptions.IndentSwitchCaseSection option of Roslyn.",
+      "description": "Whether to indent the statements under a `case` label. Sets the `CSharpFormattingOptions.IndentSwitchCaseSection` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "switch (value)",
+          "{",
+          "    case 1:",
+          "        Start();",
+          "        break;",
+          "}"
+        ]
+      }
     },
     "csharp.indentSwitchCaseSectionWhenBlock": {
-      "description": "Sets the CSharpFormattingOptions.IndentSwitchCaseSectionWhenBlock option of Roslyn.",
+      "description": "Whether to indent a block under a `case` label. Sets the `CSharpFormattingOptions.IndentSwitchCaseSectionWhenBlock` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "switch (value)",
+          "{",
+          "    case 1:",
+          "        {",
+          "            Start();",
+          "            break;",
+          "        }",
+          "}"
+        ]
+      }
     },
     "csharp.indentSwitchSection": {
-      "description": "Sets the CSharpFormattingOptions.IndentSwitchSection option of Roslyn.",
+      "description": "Whether to indent the `case` labels of a `switch` statement. Sets the `CSharpFormattingOptions.IndentSwitchSection` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "switch (value)",
+          "{",
+          "    case 1:",
+          "        Start();",
+          "        break;",
+          "}"
+        ]
+      }
     },
     "csharp.labelPositioning": {
-      "description": "Sets the CSharpFormattingOptions.LabelPositioning option of Roslyn.",
+      "description": "Where to put labels. Sets the `CSharpFormattingOptions.LabelPositioning` option of Roslyn.",
       "type": "string",
       "default": "oneLess",
-      "enum": [
-        "leftMost",
-        "oneLess",
-        "noIndent"
-      ]
+      "oneOf": [
+        {
+          "const": "leftMost",
+          "description": "Puts labels in the first column."
+        },
+        {
+          "const": "oneLess",
+          "description": "Indents labels one level less than the statements around them."
+        },
+        {
+          "const": "noIndent",
+          "description": "Indents labels the same as the statements around them."
+        }
+      ],
+      "x-example": {
+        "input": [
+          "class Worker",
+          "{",
+          "    void Run()",
+          "    {",
+          "    retry:",
+          "        if (!TryStart())",
+          "            goto retry;",
+          "    }",
+          "}"
+        ]
+      }
     },
     "csharp.newLineForCatch": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForCatch option of Roslyn.",
+      "description": "Whether to put `catch` on a new line. Sets the `CSharpFormattingOptions.NewLineForCatch` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "try",
+          "{",
+          "    Run();",
+          "}",
+          "catch (Exception)",
+          "{",
+          "    Log();",
+          "}"
+        ]
+      }
     },
     "csharp.newLineForClausesInQuery": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForClausesInQuery option of Roslyn.",
+      "description": "Whether to put each clause of a multi-line query expression on a new line. Sets the `CSharpFormattingOptions.NewLineForClausesInQuery` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "var names = from person in people where person.Age >= 18",
+          "    select person.Name;"
+        ]
+      }
     },
     "csharp.newLineForElse": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForElse option of Roslyn.",
+      "description": "Whether to put `else` on a new line. Sets the `CSharpFormattingOptions.NewLineForElse` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "if (ready)",
+          "{",
+          "    Start();",
+          "}",
+          "else",
+          "{",
+          "    Wait();",
+          "}"
+        ]
+      }
     },
     "csharp.newLineForFinally": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForFinally option of Roslyn.",
+      "description": "Whether to put `finally` on a new line. Sets the `CSharpFormattingOptions.NewLineForFinally` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "try",
+          "{",
+          "    Run();",
+          "}",
+          "finally",
+          "{",
+          "    Close();",
+          "}"
+        ]
+      }
     },
     "csharp.newLineForMembersInAnonymousTypes": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForMembersInAnonymousTypes option of Roslyn.",
+      "description": "Whether to put each member of a multi-line anonymous type on a new line. Sets the `CSharpFormattingOptions.NewLineForMembersInAnonymousTypes` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "var point = new",
+          "{",
+          "    X = 1, Y = 2",
+          "};"
+        ]
+      }
     },
     "csharp.newLineForMembersInObjectInit": {
-      "description": "Sets the CSharpFormattingOptions.NewLineForMembersInObjectInit option of Roslyn.",
+      "description": "Whether to put each member of a multi-line object initializer on a new line. Sets the `CSharpFormattingOptions.NewLineForMembersInObjectInit` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "var point = new Point",
+          "{",
+          "    X = 1, Y = 2",
+          "};"
+        ]
+      }
     },
     "csharp.newLinesForBracesInAccessors": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAccessors option of Roslyn.",
+      "description": "Whether to put the opening brace of a property accessor on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInAccessors` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Counter",
+          "{",
+          "    int Count",
+          "    {",
+          "        get",
+          "        {",
+          "            return count;",
+          "        }",
+          "    }",
+          "}"
+        ]
+      }
     },
     "csharp.newLinesForBracesInAnonymousMethods": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAnonymousMethods option of Roslyn.",
+      "description": "Whether to put the opening brace of an anonymous method on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInAnonymousMethods` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "button.Click += delegate",
+          "{",
+          "    Save();",
+          "};"
+        ]
+      }
     },
     "csharp.newLinesForBracesInAnonymousTypes": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInAnonymousTypes option of Roslyn.",
+      "description": "Whether to put the opening brace of an anonymous type on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInAnonymousTypes` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "var point = new",
+          "{",
+          "    X = 1,",
+          "    Y = 2",
+          "};"
+        ]
+      }
     },
     "csharp.newLinesForBracesInControlBlocks": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInControlBlocks option of Roslyn.",
+      "description": "Whether to put the opening brace of a statement like `if` or `for` on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInControlBlocks` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "if (ready)",
+          "{",
+          "    Start();",
+          "}"
+        ]
+      }
     },
     "csharp.newLinesForBracesInLambdaExpressionBody": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInLambdaExpressionBody option of Roslyn.",
+      "description": "Whether to put the opening brace of a lambda's body on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInLambdaExpressionBody` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "button.Click += (sender, args) =>",
+          "{",
+          "    Save();",
+          "};"
+        ]
+      }
     },
     "csharp.newLinesForBracesInMethods": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInMethods option of Roslyn.",
+      "description": "Whether to put the opening brace of a method or local function on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInMethods` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "void Run()",
+          "{",
+          "    Start();",
+          "}"
+        ]
+      }
     },
     "csharp.newLinesForBracesInObjectCollectionArrayInitializers": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInObjectCollectionArrayInitializers option of Roslyn.",
+      "description": "Whether to put the opening brace of an object, collection, or array initializer on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInObjectCollectionArrayInitializers` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "var point = new Point",
+          "{",
+          "    X = 1,",
+          "    Y = 2",
+          "};"
+        ]
+      }
     },
     "csharp.newLinesForBracesInProperties": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInProperties option of Roslyn.",
+      "description": "Whether to put the opening brace of a property on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInProperties` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Counter",
+          "{",
+          "    int Count",
+          "    {",
+          "        get => count;",
+          "    }",
+          "}"
+        ]
+      }
     },
     "csharp.newLinesForBracesInTypes": {
-      "description": "Sets the CSharpFormattingOptions.NewLinesForBracesInTypes option of Roslyn.",
+      "description": "Whether to put the opening brace of a type on a new line. Sets the `CSharpFormattingOptions.NewLinesForBracesInTypes` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Counter",
+          "{",
+          "    int count;",
+          "}"
+        ]
+      }
     },
     "csharp.spaceAfterCast": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterCast option of Roslyn.",
+      "description": "Whether to put a space after a cast. Sets the `CSharpFormattingOptions.SpaceAfterCast` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "var count = (int)total;"
+        ]
+      }
     },
     "csharp.spaceAfterColonInBaseTypeDeclaration": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterColonInBaseTypeDeclaration option of Roslyn.",
+      "description": "Whether to put a space after the colon before the base types of a type. Sets the `CSharpFormattingOptions.SpaceAfterColonInBaseTypeDeclaration` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Dog : Animal",
+          "{",
+          "}"
+        ]
+      }
     },
     "csharp.spaceAfterComma": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterComma option of Roslyn.",
+      "description": "Whether to put a space after a comma. Sets the `CSharpFormattingOptions.SpaceAfterComma` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "Add(1, 2);"
+        ]
+      }
     },
     "csharp.spaceAfterControlFlowStatementKeyword": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterControlFlowStatementKeyword option of Roslyn.",
+      "description": "Whether to put a space after a keyword like `if` or `while`. Sets the `CSharpFormattingOptions.SpaceAfterControlFlowStatementKeyword` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "while (running)",
+          "    Step();"
+        ]
+      }
     },
     "csharp.spaceAfterDot": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterDot option of Roslyn.",
+      "description": "Whether to put a space after the dot of a member access. Sets the `CSharpFormattingOptions.SpaceAfterDot` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "list.Add(1);"
+        ]
+      }
     },
     "csharp.spaceAfterMethodCallName": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterMethodCallName option of Roslyn.",
+      "description": "Whether to put a space between the name of a method and the parentheses of a call to it. Sets the `CSharpFormattingOptions.SpaceAfterMethodCallName` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "Add(1, 2);"
+        ]
+      }
     },
     "csharp.spaceAfterSemicolonsInForStatement": {
-      "description": "Sets the CSharpFormattingOptions.SpaceAfterSemicolonsInForStatement option of Roslyn.",
+      "description": "Whether to put a space after the semicolons of a `for` statement. Sets the `CSharpFormattingOptions.SpaceAfterSemicolonsInForStatement` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "for (int i = 0; i < 10; i++)",
+          "    Step(i);"
+        ]
+      }
     },
     "csharp.spaceBeforeColonInBaseTypeDeclaration": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBeforeColonInBaseTypeDeclaration option of Roslyn.",
+      "description": "Whether to put a space before the colon before the base types of a type. Sets the `CSharpFormattingOptions.SpaceBeforeColonInBaseTypeDeclaration` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Dog : Animal",
+          "{",
+          "}"
+        ]
+      }
     },
     "csharp.spaceBeforeComma": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBeforeComma option of Roslyn.",
+      "description": "Whether to put a space before a comma. Sets the `CSharpFormattingOptions.SpaceBeforeComma` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "Add(1, 2);"
+        ]
+      }
     },
     "csharp.spaceBeforeDot": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBeforeDot option of Roslyn.",
+      "description": "Whether to put a space before the dot of a member access. Sets the `CSharpFormattingOptions.SpaceBeforeDot` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "list.Add(1);"
+        ]
+      }
     },
     "csharp.spaceBeforeOpenSquareBracket": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBeforeOpenSquareBracket option of Roslyn.",
+      "description": "Whether to put a space before the square brackets of an element access. Sets the `CSharpFormattingOptions.SpaceBeforeOpenSquareBracket` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "var first = values[0];"
+        ]
+      }
     },
     "csharp.spaceBeforeSemicolonsInForStatement": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBeforeSemicolonsInForStatement option of Roslyn.",
+      "description": "Whether to put a space before the semicolons of a `for` statement. Sets the `CSharpFormattingOptions.SpaceBeforeSemicolonsInForStatement` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "for (int i = 0; i < 10; i++)",
+          "    Step(i);"
+        ]
+      }
     },
     "csharp.spaceBetweenEmptyMethodCallParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptyMethodCallParentheses option of Roslyn.",
+      "description": "Whether to put a space within the empty parentheses of a call. Sets the `CSharpFormattingOptions.SpaceBetweenEmptyMethodCallParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "Run();"
+        ]
+      }
     },
     "csharp.spaceBetweenEmptyMethodDeclarationParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptyMethodDeclarationParentheses option of Roslyn.",
+      "description": "Whether to put a space within the empty parentheses of a method without parameters. Sets the `CSharpFormattingOptions.SpaceBetweenEmptyMethodDeclarationParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "void Run()",
+          "{",
+          "}"
+        ]
+      }
     },
     "csharp.spaceBetweenEmptySquareBrackets": {
-      "description": "Sets the CSharpFormattingOptions.SpaceBetweenEmptySquareBrackets option of Roslyn.",
+      "description": "Whether to put a space within empty square brackets, like the ones of an array type. Sets the `CSharpFormattingOptions.SpaceBetweenEmptySquareBrackets` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "int[] values = new int[] { 1, 2 };"
+        ]
+      }
     },
     "csharp.spaceWithinCastParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinCastParentheses option of Roslyn.",
+      "description": "Whether to put spaces within the parentheses of a cast. Sets the `CSharpFormattingOptions.SpaceWithinCastParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "var count = (int)total;"
+        ]
+      }
     },
     "csharp.spaceWithinExpressionParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinExpressionParentheses option of Roslyn.",
+      "description": "Whether to put spaces within parentheses around an expression. Sets the `CSharpFormattingOptions.SpaceWithinExpressionParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "var total = (a + b) * c;"
+        ]
+      }
     },
     "csharp.spaceWithinMethodCallParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinMethodCallParentheses option of Roslyn.",
+      "description": "Whether to put spaces within the parentheses of a call. Sets the `CSharpFormattingOptions.SpaceWithinMethodCallParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "Add(1, 2);"
+        ]
+      }
     },
     "csharp.spaceWithinMethodDeclarationParenthesis": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinMethodDeclarationParenthesis option of Roslyn.",
+      "description": "Whether to put spaces within the parentheses of a method's parameters. Sets the `CSharpFormattingOptions.SpaceWithinMethodDeclarationParenthesis` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "int Add(int a, int b)",
+          "{",
+          "    return a + b;",
+          "}"
+        ]
+      }
     },
     "csharp.spaceWithinOtherParentheses": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinOtherParentheses option of Roslyn.",
+      "description": "Whether to put spaces within other parentheses, like the ones of an `if` statement. Sets the `CSharpFormattingOptions.SpaceWithinOtherParentheses` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "if (ready)",
+          "    Start();"
+        ]
+      }
     },
     "csharp.spaceWithinSquareBrackets": {
-      "description": "Sets the CSharpFormattingOptions.SpaceWithinSquareBrackets option of Roslyn.",
+      "description": "Whether to put spaces within the square brackets of an element access. Sets the `CSharpFormattingOptions.SpaceWithinSquareBrackets` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "var first = values[0];"
+        ]
+      }
     },
     "csharp.spacesIgnoreAroundVariableDeclaration": {
-      "description": "Sets the CSharpFormattingOptions.SpacesIgnoreAroundVariableDeclaration option of Roslyn.",
+      "description": "Whether to keep the spaces in variable declarations as they are. Sets the `CSharpFormattingOptions.SpacesIgnoreAroundVariableDeclaration` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "int  count   = 0;"
+        ]
+      }
     },
     "csharp.spacingAfterMethodDeclarationName": {
-      "description": "Sets the CSharpFormattingOptions.SpacingAfterMethodDeclarationName option of Roslyn.",
+      "description": "Whether to put a space between the name of a method and its parameters. Sets the `CSharpFormattingOptions.SpacingAfterMethodDeclarationName` option of Roslyn.",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "x-example": {
+        "input": [
+          "void Run()",
+          "{",
+          "}"
+        ]
+      }
     },
     "csharp.spacingAroundBinaryOperator": {
-      "description": "Sets the CSharpFormattingOptions.SpacingAroundBinaryOperator option of Roslyn.",
+      "description": "The spaces around binary operators. Sets the `CSharpFormattingOptions.SpacingAroundBinaryOperator` option of Roslyn.",
       "type": "string",
       "default": "single",
-      "enum": [
-        "single",
-        "ignore",
-        "remove"
-      ]
+      "oneOf": [
+        {
+          "const": "single",
+          "description": "Puts a space on each side of binary operators."
+        },
+        {
+          "const": "ignore",
+          "description": "Maintains the spaces around binary operators."
+        },
+        {
+          "const": "remove",
+          "description": "Removes the spaces around binary operators."
+        }
+      ],
+      "x-example": {
+        "input": [
+          "var total = a +  b*c;"
+        ]
+      }
     },
     "csharp.wrappingKeepStatementsOnSingleLine": {
-      "description": "Sets the CSharpFormattingOptions.WrappingKeepStatementsOnSingleLine option of Roslyn.",
+      "description": "Whether to keep statements that are on the same line together instead of putting each on its own line. Sets the `CSharpFormattingOptions.WrappingKeepStatementsOnSingleLine` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "int a = 1; int b = 2;"
+        ]
+      }
     },
     "csharp.wrappingPreserveSingleLine": {
-      "description": "Sets the CSharpFormattingOptions.WrappingPreserveSingleLine option of Roslyn.",
+      "description": "Whether to keep blocks and properties that are on a single line instead of spreading them over multiple lines. Sets the `CSharpFormattingOptions.WrappingPreserveSingleLine` option of Roslyn.",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "x-example": {
+        "input": [
+          "class Counter",
+          "{",
+          "    int Count { get { return count; } }",
+          "}"
+        ]
+      }
     }
   }
 }

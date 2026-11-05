@@ -46,6 +46,15 @@ workflow({
       { name: "Test", run: "dotnet test" },
       ...setupWasmSteps,
       { name: "Build Wasm", run: buildWasmCommand },
+      // adds the outputs of the code examples to the config schema, which also
+      // checks that the plugin accepts every property in it
+      {
+        name: "Generate config schema",
+        run: [
+          "deno run -A --minimum-dependency-age=0 jsr:@dprint/automation@0.14.3/tasks/publish-schema",
+          `${wasmPath} deployment/schema.json --extension cs`,
+        ].join(" "),
+      },
       {
         name: "Test Wasm",
         env: { DPRINT_ROSLYN_WASM_PATH: `\${{ github.workspace }}/${wasmPath}` },

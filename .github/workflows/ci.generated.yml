@@ -45,6 +45,8 @@ jobs:
           echo "DPRINT_PATH=$HOME/.dprint/bin/dprint" >> "$GITHUB_ENV"
       - name: Build Wasm
         run: dotnet publish DprintPluginRoslyn -c Release -r wasi-wasm
+      - name: Generate config schema
+        run: 'deno run -A --minimum-dependency-age=0 jsr:@dprint/automation@0.14.3/tasks/publish-schema DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm deployment/schema.json --extension cs'
       - name: Test Wasm
         env:
           DPRINT_ROSLYN_WASM_PATH: '${{ github.workspace }}/DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm'
