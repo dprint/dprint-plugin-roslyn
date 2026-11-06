@@ -51,7 +51,7 @@ workflow({
       {
         name: "Generate config schema",
         run: [
-          "deno run -A --minimum-dependency-age=0 jsr:@dprint/automation@0.14.3/tasks/publish-schema",
+          "deno run -A --minimum-dependency-age=0 jsr:@dprint/automation@0.14.4/tasks/publish-schema",
           `${wasmPath} deployment/schema.json --extension cs`,
         ].join(" "),
       },
