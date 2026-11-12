@@ -95,6 +95,15 @@ public class PluginTests
     }
 
     [Test]
+    public void Format_UnionWithBody_IndentsOpenBrace()
+    {
+        var plugin = CreatePluginWithDefaultConfig();
+        var text = "namespace Test\n{\n    public union Pet(Cat, Dog)\n    {\n        public void Method() { }\n    }\n}\n";
+
+        Assert.That(Format(plugin, "file.cs", text), Is.Null);
+    }
+
+    [Test]
     public void GetFileMatchingInfo_Default_MatchesBothLanguages()
     {
         var plugin = CreatePluginWithDefaultConfig();
