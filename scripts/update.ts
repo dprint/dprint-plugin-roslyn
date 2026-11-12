@@ -7,6 +7,7 @@
  */
 import $ from "jsr:@david/dax@^0.47.0";
 import { aiFixRoslynUpdate } from "./ai_fix.ts";
+import { getLatestSdkRoslynVersion } from "./sdk_roslyn_version.ts";
 import { bumpVersion, csprojPath, publishVersion, rootDir } from "./utils.ts";
 
 const wasmPath = rootDir.join("DprintPluginRoslyn/bin/Release/net10.0/wasi-wasm/publish/dprint-plugin-roslyn.wasm");
@@ -20,7 +21,13 @@ $.logStep("Installing dotnet-outdated-tool...");
 await $`dotnet tool install --global dotnet-outdated-tool`.noThrow();
 
 $.logStep("Upgrading packages...");
-await $`dotnet outdated --upgrade`;
+// Roslyn is excluded because it's updated to the SDK's version below
+await $`dotnet outdated --upgrade --exclude Microsoft.CodeAnalysis`;
+
+$.logStep("Finding the Roslyn version of the latest .NET SDK...");
+const sdkRoslyn = await getLatestSdkRoslynVersion();
+$.log(`SDK ${sdkRoslyn.sdkVersion} uses Roslyn ${sdkRoslyn.roslynVersion}.`);
+setRoslynVersion(sdkRoslyn.roslynVersion);
 
 if (!await hasFileChanged(csprojPath.toString())) {
   $.log("No changes.");
@@ -132,6 +139,15 @@ function getRoslynVersion() {
     throw new Error("Could not find the Roslyn version in the project file.");
   }
   return version;
+}
+
+function setRoslynVersion(version: string) {
+  const text = csprojPath.readTextSync();
+  const newText = text.replace(
+    /(Include="Microsoft\.CodeAnalysis\.[A-Za-z.]+" Version=")[^"]+"/g,
+    `$1${version}"`,
+  );
+  csprojPath.writeTextSync(newText);
 }
 
 function isPatchBumpOrSame(from: string, to: string) {
